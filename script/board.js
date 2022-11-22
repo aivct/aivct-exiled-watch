@@ -133,6 +133,7 @@ var Board = (function()
 			// new algorithm:
 				// neighbours algo 
 				// take neighbours, if valid, addUnique, repeat up to range.
+			// I just realized I re-invented dijkstra, but worse.
 			let validTiles = [];
 			let lastTiles = [index];
 			for(var currentRange = 1; currentRange <= range; currentRange++)

@@ -15,6 +15,8 @@ var Game = (function()
 		{
 			state = {};
 			// initialize categories 
+			state["system"] = {};
+			state["system"].version = VERSION;
 			state["map"] = {};
 			
 			// id'ed objects
@@ -182,5 +184,16 @@ var Game = (function()
 			// put trigger listeners here (since we only care if something HAS changed)
 			return true;
 		},			
+		
+		// shorthand for getting an object by ID and using the + operator on it. 
+		changeIDObjectProperty: function(category, ID, property, delta)
+		{
+			let object = Game.getIDObject(category, ID);
+			if(!object) return false;
+			
+			object[property] += delta;
+			// put trigger listeners here (since we only care if something HAS changed)
+			return true;
+		},
 	};
 })();

@@ -1,3 +1,14 @@
+/*
+	0.0.4 changelog:
+	-added ability to attack and defend
+	-added XP indicators for units 
+	-added spriteSheet type for image assets definitions
+	0.0.3 changelog:
+	-changed mouse to pointer events for compatibility
+ */
+
+const VERSION = "0.0.4"; 
+ 
 // basic init functions
 function initialize()
 {
@@ -29,7 +40,7 @@ var Assets = (function()
 	/*
 		Image types:
 			"sprite": simple as that, a humble image
-			"spriteSheet": a sheet of sprites which can be automatically cut (TBD)
+			"sheet": a sheet of sprites which can be automatically cut (TBD)
 	 */
 	var imagesToLoad = {
 		"spearman": {
@@ -40,19 +51,35 @@ var Assets = (function()
 			"src": "./assets/undead_spearman.png",
 			"type": "sprite",
 		},
+		"XP_ranks_sheet": {
+			"src": "./assets/XP_ranks_sheet.png",
+			"type": "sheet",
+			"cut": "regular",
+			"spriteWidth": 9,
+			"spriteHeight": 16,
+		},
 	};
-	
+
 	var images = {};
+	var sheetsToCut = {};
 	
 	var imageCount = 0;
 	var imageProcessedCount = 0;
 	
 	var isImagesLoaded = false;
 	/* private functions */
-	let checkIfAllImagesAreLoaded = () => {
+	var cutAllSheets = () => {
+		for(let key in sheetsToCut)
+		{
+			Assets.cutSheet(key);
+		}
+	}
+	
+	var checkIfAllImagesAreLoaded = () => {
 		if(imageProcessedCount >= imageCount)
 		{
 			isImagesLoaded = true;
+			cutAllSheets();
 			// put an init function here.
 			return true;
 		}
@@ -60,12 +87,12 @@ var Assets = (function()
 		return false;
 	}
 	
-	let onImageLoaded = (event) => {
+	var onImageLoaded = (event) => {
 		imageProcessedCount++;
 		checkIfAllImagesAreLoaded();
 	};
 	
-	let onImageFailed = (event) => {
+	var onImageFailed = (event) => {
 		console.warn(`Image not found: ${event.target.src}.`);
 		imageProcessedCount++;
 		checkIfAllImagesAreLoaded();
@@ -80,28 +107,58 @@ var Assets = (function()
 		
 		loadImages: function()
 		{
-			for(var key in imagesToLoad)
+			for(let key in imagesToLoad)
 			{
-				var imagePromise = new Promise((resolve, reject) =>
+				let imagePromise = new Promise((resolve, reject) =>
 				{
 					let image = new Image();
 					
 					image.addEventListener('load', resolve);
 					image.addEventListener('error', reject);
 					image.src = imagesToLoad[key]?.src;
-					switch(imagesToLoad[key]?.type)
-					{
-						case "sprite":
-						default:
-							images[key] = new Sprite(image);
-					}
+					
+					images[key] = new Sprite(image);
 					imageCount++;
 				});
+				
+				imagePromise.then(onImageLoaded, onImageFailed);
+				switch(imagesToLoad[key]?.type)
+				{
+					case "sheet":
+						sheetsToCut[key] = key;
+					case "sprite":
+					default:
+						break;
+				}
 			}
-			imagePromise.then(onImageLoaded, onImageFailed);
 			
 			// just in case
 			if(imageCount === 0) isImagesLoaded = true;
+		},
+		
+		cutSheet: function(key)
+		{
+			let image = Assets.getImage(key);
+			let definition = imagesToLoad[key];
+			if(!image) 
+			{
+				console.warn(`Assets.cutSheet: cannot find image "${key}".`);
+				return;
+			}
+			if(!definition)
+			{
+				// something has gone VERY wrong (most likely we're cutting a sprite instead of a sheet)
+				console.warn(`Assets.cutSheet: cannot find definition "${key}".`);
+			}
+			
+			let cuttingCount = 0;
+			for(let x = 0, width = image.getWidth(); x < width; x+=definition.spriteWidth)
+			{
+				cuttingCount++;
+				var spriteName = `${key}_${cuttingCount}`;
+				
+				images[spriteName] = new SpriteImage(image.image, x, 0, definition.spriteWidth, definition.spriteHeight);
+			}
 		},
 		
 		getImage: function(key)
@@ -151,9 +208,9 @@ var GUI = (function()
 		createGUI: function()
 		{
 			GUIContainer = document.createElement("div");
-			GUIContainer.addEventListener("mousedown",GUI.handleMousedown, false);
-			GUIContainer.addEventListener("mouseup",GUI.handleMouseup, false);
-			GUIContainer.addEventListener("mousemove",GUI.handleMousemove, false);
+			GUIContainer.addEventListener("pointerdown",GUI.handlePointerdown, false);
+			GUIContainer.addEventListener("pointerup",GUI.handlePointerup, false);
+			GUIContainer.addEventListener("pointermove",GUI.handlePointermove, false);
 			GUIContainer.style.position = "relative";
 			
 			mapLayer = GUI.createMapLayer();
@@ -247,7 +304,7 @@ var GUI = (function()
 		{
 			context.clearRect(0,0,canvas.width,canvas.height);
 			
-			var units = Pieces.getPieces();
+			var units = Pieces.getLivingPieces();
 			for(var index = 0; index < units.length; index++)
 			{
 				var unit = units[index];
@@ -267,7 +324,8 @@ var GUI = (function()
 			if(!sprite) return;
 			// draw depending on its HP, most likely temp for now
 			let spritesToDraw = 12;
-			let unitHPPercent = unit.HP / unit.maxHP;
+			let unitHPPercent = Pieces.getPieceHPByID(unit?.ID) / Pieces.getPieceMaxHPByID(unit?.ID);
+			let unitLevel = Pieces.getPieceLevelByID(unit?.ID);
 			spritesToDraw = unitHPPercent * spritesToDraw;
 			for(let index = 0; index < spritesToDraw; index++)
 			{
@@ -281,11 +339,23 @@ var GUI = (function()
 				if(rowCount === 0) context.globalAlpha = 1;
 				if(rowCount === 1) context.globalAlpha = 0.66;
 				if(rowCount === 2) context.globalAlpha = 0.33;
+				
 				sprite.draw(context
 					, canvasPosition.x + tileSize - marginX - width * (index % rowWidth) - sprite.getWidth() - (rowCount % 2)
 					, canvasPosition.y + tileSize - marginY - height * (rowCount) - sprite.getHeight());
 			}
+			
 			context.globalAlpha = 1;
+			if(unitLevel > 0)
+			{
+				let rankSprite = Assets.getImage(`XP_ranks_sheet_${unitLevel}`);
+				if(rankSprite)
+				{
+					rankSprite.draw(context
+						, canvasPosition.x + tileSize - rankSprite.getWidth()
+						, canvasPosition.y);
+				}
+			}
 		},
 		
 		drawEffects: function(context, canvas)
@@ -347,19 +417,20 @@ var GUI = (function()
 			unitsLayer.update();
 		},
 		
-		handleMousedown: function(event)
+		handlePointerdown: function(event)
 		{
 			bounds = GUIContainer.getBoundingClientRect();
 	
-			var mouseX = event.clientX - bounds.x;
-			var mouseY = event.clientY - bounds.y;
+			var pointerX = event.clientX - bounds.x;
+			var pointerY = event.clientY - bounds.y;
 			
-			// console.log(GUI.canvasToCartesian(mouseX, mouseY));
+			// if its position is out of bounds, that's an invalid click.
+			let positionCartesian = GUI.canvasToCartesian(pointerX, pointerY);
+			if(!Board.isValidCartesian(positionCartesian.x, positionCartesian.y)) return;
 			
 			// testing
 			let context = effectsLayer.getContext();
 			context.clearRect(0,0,canvasWidth,canvasHeight);
-			let positionCartesian = GUI.canvasToCartesian(mouseX, mouseY);
 			let positionIndex = Board.calculateIndexFromCartesian(positionCartesian.x, positionCartesian.y);
 			let validTiles = Board.calculateValidDestinationTilesIndexByIndex(positionIndex, 5);
 			
@@ -369,20 +440,26 @@ var GUI = (function()
 			}
 		},
 		
-		handleMouseup: function(event)
+		handlePointerup: function(event)
 		{
 			bounds = GUIContainer.getBoundingClientRect();
 	
-			var mouseX = event.clientX - bounds.x;
-			var mouseY = event.clientY - bounds.y;
+			var pointerX = event.clientX - bounds.x;
+			var pointerY = event.clientY - bounds.y;
+			
+			let positionCartesian = GUI.canvasToCartesian(pointerX, pointerY);
+			if(!Board.isValidCartesian(positionCartesian.x, positionCartesian.y)) return;
 		},
 		
-		handleMousemove: function(event)
+		handlePointermove: function(event)
 		{
 			bounds = GUIContainer.getBoundingClientRect();
 	
-			var mouseX = event.clientX - bounds.x;
-			var mouseY = event.clientY - bounds.y;
+			var pointerX = event.clientX - bounds.x;
+			var pointerY = event.clientY - bounds.y;
+			
+			let positionCartesian = GUI.canvasToCartesian(pointerX, pointerY);
+			if(!Board.isValidCartesian(positionCartesian.x, positionCartesian.y)) return;
 		},
 	};
 })();
