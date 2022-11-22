@@ -58,6 +58,26 @@ var Board = (function()
 			return Board.getTileFromIndex(index);
 		},
 		
+		getNeighboursIndexByIndex: function(index)
+		{
+			let neighboursDelta = [{x:1,y:0},{x:0,y:1},{x:-1,y:0},{x:0,y:-1}];
+			let currentPosition = Board.calculateCartesianFromIndex(index);
+			let neighbours = [];
+			for(var neighbourCount = 0; neighbourCount < neighboursDelta.length; neighbourCount++)
+			{
+				let neighbourPosition = neighboursDelta[neighbourCount];
+				neighbourPosition.x += currentPosition.x;
+				neighbourPosition.y += currentPosition.y;
+				// note that calculateIndexFromCartesian does not guarantee valid cartesian, and so we must check cartesian bounds first
+				if(Board.isValidCartesian(neighbourPosition.x, neighbourPosition.y))
+				{
+					let neighbourIndex = Board.calculateIndexFromCartesian(neighbourPosition.x, neighbourPosition.y);
+					neighbours.push(neighbourIndex);
+				}
+			}
+			return neighbours;
+		},
+		
 		calculateCartesianFromIndex: function(index)
 		{
 			var width = Game.getState("map","width");
@@ -79,10 +99,85 @@ var Board = (function()
 			return index;
 		},
 		
+		calculateDistanceToTileByIndex: function(index, neighbourIndex)
+		{
+			let cartesian = Board.calculateCartesianFromIndex(index);
+			let neighbourCartesian = Board.calculateCartesianFromIndex(neighbourIndex);
+			
+			let deltaX = cartesian.x - neighbourCartesian.x;
+			let deltaY = cartesian.y - neighbourCartesian.y;
+			
+			return Math.abs(deltaX) + Math.abs(deltaY);
+		},
+		
+		/*
+			Diamond shaped. ie, at range 2:
+			  X
+			 XXX
+			XXOXX
+			 XXX
+			  X
+		 */
+		calculateValidDestinationTilesIndexByIndex: function(index, range = 1)
+		{
+			let tiles = Game.getState("map","tiles");
+			// filter all tiles which are in range first
+			let tilesInRange = [];
+			for(var currentTileIndex = 0; currentTileIndex < tiles.length; currentTileIndex++)
+			{
+				if(Board.calculateDistanceToTileByIndex(index, currentTileIndex) <= range)
+				{
+					tilesInRange.push(currentTileIndex);
+				}
+			}
+			// new algorithm:
+				// neighbours algo 
+				// take neighbours, if valid, addUnique, repeat up to range.
+			let validTiles = [];
+			let lastTiles = [index];
+			for(var currentRange = 1; currentRange <= range; currentRange++)
+			{
+				let currentTiles = [];
+				for(var tileCount = 0; tileCount < lastTiles.length; tileCount++)
+				{
+					let neighbours = Board.getNeighboursIndexByIndex(lastTiles[tileCount]);
+					for(var neighbourCount = 0; neighbourCount < neighbours.length; neighbourCount++)
+					{
+						let neighbour = neighbours[neighbourCount];
+						// don't repeat yourself and current position is NOT a valid movement position.
+						// this is a performance optimization to save us from backtracking
+						if((validTiles.indexOf(neighbour) > -1) || neighbour === index) continue;
+						if(Board.isTileValidDestinationByIndex(neighbour))
+						{
+							addUniqueElementInArray(currentTiles, neighbour);
+							addUniqueElementInArray(validTiles, neighbour);
+						}
+					}
+				}
+				lastTiles = currentTiles;
+			}
+			return validTiles;
+		},
+		
+		/* 
+			Only adjacent 4 counts as neighbours. 
+			Ie, (1,0), (0,1), (-1,0), (0,-1).
+			
+		 */
+		isTileNeighbourByIndex: function(index, neighbourIndex)
+		{
+			if(Board.calculateDistanceToTileByIndex(index, neighbourIndex) === 1) return true;
+			return false;
+		},
+		
 		isTilePieceOccupiedIndex: function(index)
 		{
 			let tile = Board.getTileFromIndex(index);
-			if(!tile) console.warn(`Board.isTilePieceOccupiedIndex: cannot find tile for index "${index}".`);
+			if(!tile) 
+			{
+				console.warn(`Board.isTilePieceOccupiedIndex: cannot find tile for index "${index}".`);
+				return;
+			}
 			if(tile.pieceID) return true;
 			return false;
 		},
@@ -90,7 +185,11 @@ var Board = (function()
 		isTileValidDestinationByIndex: function(index)
 		{
 			let tile = Board.getTileFromIndex(index);
-			if(!tile) console.warn(`Board.isTileValidDestinationByIndex: cannot find tile for index "${index}".`);
+			if(!tile) 
+			{
+				console.warn(`Board.isTileValidDestinationByIndex: cannot find tile for index "${index}".`);
+				return;
+			}
 			
 			if(tile.pieceID) return false;
 			if(tile.buildingID) return false;

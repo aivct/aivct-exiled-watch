@@ -1,5 +1,9 @@
 /*
 	"...the pieces are moving..."
+	
+	A piece shall comprise of the soldiers/monsters drafted to fight.
+	Its attack/defense function is also relegated to an aggregation of individual functions.
+	But that's for later.
  */
 var Pieces = (function()
 {
@@ -127,11 +131,37 @@ var Pieces = (function()
 			GUI.updateUnits();
 		},
 		
+		// diamond shaped
+		getValidDestinationTilesByIndex: function(originIndex, range = 1)
+		{
+			
+		},
+		
 		// TODO: getPieceAttack
 		// TODO: getPieceDefense
 		// TODO: damagePiece
 		// TODO: heal piece,
 		// TODO: pieceOnEndTurn
 		// TODO: piece attacked
+		
+		getLivingPiecesID: function()
+		{
+			let pieces = Game.getState("pieces");
+			let livingPieces = pieces.filter(piece => {return !piece.isDead});
+			let livingPiecesID = livingPieces.map(piece => {return piece.ID});
+			return livingPiecesID;
+		},
+		
+		endTurn: function()
+		{
+			// go through every piece which is alive and restore AP.
+			let alivePieces = Pieces.getLivingPiecesID();
+			for(var index = 0; index < alivePieces.length; index++)
+			{
+				let pieceID = alivePieces[index];
+				let maxAP = Game.getIDObjectProperty("pieces", pieceID, "maxAP");
+				Game.setIDObjectProperty("pieces", pieceID, "AP", maxAP);
+			}
+		},
 	}
 })();

@@ -125,8 +125,8 @@ var GUI = (function()
 	var GUIContainer;
 	
 	var mapLayer;
-	var effectsLayer;
 	var unitsLayer;
+	var effectsLayer;
 	
 	// TODO: implement resizing
 	var canvasWidth = 800;
@@ -144,7 +144,7 @@ var GUI = (function()
 			offsetX = 12;
 			offsetY = 12;
 			tileSize = 32;
-			tileOffset = 3;
+			tileOffset = 5;
 			GUI.createGUI();
 		},
 		
@@ -158,14 +158,12 @@ var GUI = (function()
 			
 			mapLayer = GUI.createMapLayer();
 			GUIContainer.appendChild(mapLayer.getCanvas());
-			mapLayer.getCanvas().style.position = "absolute";
-			mapLayer.getCanvas().style.top = "0";
-			mapLayer.getCanvas().style.left = "0";
+			
 			unitsLayer = GUI.createUnitsLayer();
 			GUIContainer.appendChild(unitsLayer.getCanvas());
-			unitsLayer.getCanvas().style.position = "absolute";
-			unitsLayer.getCanvas().style.top = "0";
-			unitsLayer.getCanvas().style.left = "0";
+			
+			effectsLayer = GUI.createEffectsLayer();
+			GUIContainer.appendChild(effectsLayer.getCanvas());
 			
 			document.body.appendChild(GUIContainer);
 		},
@@ -182,6 +180,15 @@ var GUI = (function()
 		createUnitsLayer: function()
 		{
 			let layer = new CanvasLayer(canvasWidth, canvasHeight, GUI.drawUnits);
+			layer.width = canvasWidth;
+			layer.height = canvasHeight;
+			
+			return layer;
+		},
+		
+		createEffectsLayer: function()
+		{
+			let layer = new CanvasLayer(canvasWidth, canvasHeight, GUI.drawEffects);
 			layer.width = canvasWidth;
 			layer.height = canvasHeight;
 			
@@ -281,6 +288,24 @@ var GUI = (function()
 			context.globalAlpha = 1;
 		},
 		
+		drawEffects: function(context, canvas)
+		{
+			
+		},
+		
+		drawHighlightedTile: function(context, tilePosition)
+		{
+			if(context.strokeStyle !== "blue") context.strokeStyle = "blue";
+			if(context.lineWidth !== 2) context.lineWidth = 2;
+			
+			let positionCartesian = Board.calculateCartesianFromIndex(tilePosition);
+			let canvasPosition = GUI.cartesianToCanvas(positionCartesian.x, positionCartesian.y);
+			
+			context.beginPath();
+			context.rect(canvasPosition.x, canvasPosition.y,tileSize,tileSize);
+			context.stroke();
+		},
+		
 		cartesianToCanvas: function(x, y)
 		{
 			let canvasX = offsetX+(tileSize+tileOffset)*x;
@@ -330,6 +355,18 @@ var GUI = (function()
 			var mouseY = event.clientY - bounds.y;
 			
 			// console.log(GUI.canvasToCartesian(mouseX, mouseY));
+			
+			// testing
+			let context = effectsLayer.getContext();
+			context.clearRect(0,0,canvasWidth,canvasHeight);
+			let positionCartesian = GUI.canvasToCartesian(mouseX, mouseY);
+			let positionIndex = Board.calculateIndexFromCartesian(positionCartesian.x, positionCartesian.y);
+			let validTiles = Board.calculateValidDestinationTilesIndexByIndex(positionIndex, 5);
+			
+			for(var index = 0; index < validTiles.length; index++)
+			{
+				GUI.drawHighlightedTile(context, validTiles[index]);
+			}
 		},
 		
 		handleMouseup: function(event)
@@ -376,8 +413,11 @@ function CanvasLayer(width = 800, height = 600, onpaint)
 	this.canvas = document.createElement("CANVAS");
 	this.canvas.width = 800;
 	this.canvas.height = 600;
-	this.context = this.canvas.getContext("2d");
+	this.canvas.style.position = "absolute";
+	this.canvas.style.top = "0";
+	this.canvas.style.left = "0";
 	
+	this.context = this.canvas.getContext("2d");
 	this.context.webkitImageSmoothingEnabled = false;
 	this.context.msImageSmoothingEnabled = false;
 	this.context.imageSmoothingEnabled = false;
@@ -399,6 +439,11 @@ CanvasLayer.prototype.draw = function()
 CanvasLayer.prototype.getCanvas = function()
 {
 	return this.canvas;
+}
+
+CanvasLayer.prototype.getContext = function()
+{
+	return this.context;
 }
 
 CanvasLayer.prototype.update = function()
