@@ -1,5 +1,6 @@
-const VERSION = "0.0.5"; 
+const VERSION = "0.1.0"; 
  
+// TODO: create teams
 // basic init functions
 function initialize()
 {
@@ -164,6 +165,8 @@ var Assets = (function()
 	
 	This should be closely coupled with the Game module, and nothing else.
 	
+	GUI functions should not throw errors. If something is weird, at most, log it. Glitches are fine.
+	
 	It has two jobs: 
 		- translate data into pixels
 		- and translate pixels back into data.
@@ -186,11 +189,13 @@ var GUI = (function()
 	var tileSize;
 	var tileOffset;
 	
+	var mousedownTile = null;
+	
 	return {
 		initialize: function()
 		{
-			offsetX = 12;
-			offsetY = 12;
+			offsetX = 112;
+			offsetY = 112;
 			tileSize = 32;
 			tileOffset = 5;
 			GUI.createGUI();
@@ -247,6 +252,7 @@ var GUI = (function()
 		{
 			mapLayer.draw();
 			unitsLayer.draw();
+			effectsLayer.draw();
 		},
 		
 		drawMap: function(context, canvas)
@@ -305,6 +311,7 @@ var GUI = (function()
 		
 		drawUnit: function(context, unit)
 		{
+			if(!unit) return;
 			let position = unit.position;
 			if(!position) return; // it's merely undeployed, doesn't matter to us at the renderer.
 			
@@ -315,8 +322,10 @@ var GUI = (function()
 			if(!sprite) return;
 			// draw depending on its HP, most likely temp for now
 			let spritesToDraw = 12;
-			let unitHPPercent = Pieces.getPieceHPByID(unit?.ID) / Pieces.getPieceMaxHPByID(unit?.ID);
-			let unitLevel = Pieces.getPieceLevelByID(unit?.ID);
+			let ID = unit?.ID;
+			if(!ID) return;
+			let unitHPPercent = Pieces.getPieceHPByID(ID) / Pieces.getPieceMaxHPByID(ID);
+			let unitLevel = Pieces.getPieceLevelByID(ID);
 			spritesToDraw = unitHPPercent * spritesToDraw;
 			for(let index = 0; index < spritesToDraw; index++)
 			{
@@ -336,6 +345,7 @@ var GUI = (function()
 					, canvasPosition.y + tileSize - marginY - height * (rowCount) - sprite.getHeight());
 			}
 			
+			// XP indicator
 			context.globalAlpha = 1;
 			if(unitLevel > 0)
 			{
@@ -347,18 +357,61 @@ var GUI = (function()
 						, canvasPosition.y);
 				}
 			}
+			
+			// AP indicator
+			let APBarRatio = Pieces.getPieceAPByID(ID) / Pieces.getPieceMaxAPByID(ID);
+			
+			context.fillStyle = "#9E8B00";
+			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize, tileSize, 3);
+			
+			context.fillStyle = "#FAFF00";
+			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize, tileSize * APBarRatio, 2);
+			
 		},
 		
 		drawEffects: function(context, canvas)
 		{
+			context.clearRect(0,0,canvas.width,canvas.height);
 			
+			let selectedPieceID = Pieces.getSelectedPiece();
+			if(selectedPieceID)
+			{
+				let selectedPieceAP = Pieces.getPieceAPByID(selectedPieceID);
+				
+				// highlight selected
+				let selectedPiecePosition = Pieces.getPiecePositionByID(selectedPieceID);
+				context.strokeStyle = "green";
+				context.lineWidth = 2;
+				GUI.drawHighlightedTile(context, selectedPiecePosition);
+				
+				// draw movement map
+				let movementMap = Pieces.getValidMovementMap(selectedPieceID);
+				context.strokeStyle = "blue";
+				context.fillStyle = "blue";
+				for(var tileIndex in movementMap)
+				{
+					GUI.drawHighlightedTile(context, tileIndex);
+					GUI.debugDrawTileText(context, tileIndex, movementMap[tileIndex]);
+				}
+				
+				// draw attack map but ONLY if there is AP left
+				if(selectedPieceAP > 0)
+				{
+					let validMeleeTargetsID = Pieces.getValidTargetsID(selectedPieceID, 1, "attack");
+					context.strokeStyle = "red";
+					for(let targetCount = 0; targetCount < validMeleeTargetsID.length; targetCount++)
+					{
+						let targetID = validMeleeTargetsID[targetCount];
+						let targetPosition = Pieces.getPiecePositionByID(targetID);
+						
+						GUI.drawHighlightedTile(context, targetPosition);
+					}
+				}
+			}
 		},
 		
 		drawHighlightedTile: function(context, tilePosition)
 		{
-			if(context.strokeStyle !== "blue") context.strokeStyle = "blue";
-			if(context.lineWidth !== 2) context.lineWidth = 2;
-			
 			let positionCartesian = Board.calculateCartesianFromIndex(tilePosition);
 			let canvasPosition = GUI.cartesianToCanvas(positionCartesian.x, positionCartesian.y);
 			
@@ -411,10 +464,16 @@ var GUI = (function()
 			unitsLayer.update();
 		},
 		
+		updateEffects: function()
+		{
+			effectsLayer.update();
+		},
+		
 		updateAll: function()
 		{
 			mapLayer.update();
 			unitsLayer.update();
+			effectsLayer.update();
 		},
 		
 		handlePointerdown: function(event)
@@ -427,20 +486,9 @@ var GUI = (function()
 			// if its position is out of bounds, that's an invalid click.
 			let positionCartesian = GUI.canvasToCartesian(pointerX, pointerY);
 			if(!Board.isValidCartesian(positionCartesian.x, positionCartesian.y)) return;
-			
-			// testing
-			let context = effectsLayer.getContext();
-			context.clearRect(0,0,canvasWidth,canvasHeight);
 			let positionIndex = Board.calculateIndexFromCartesian(positionCartesian.x, positionCartesian.y);
-			let validTiles = Board.calculatePathfindingDistanceMapByIndex(positionIndex, 5);
 			
-			for(var index in validTiles)
-			{
-				GUI.drawHighlightedTile(context, index);
-				// distance
-				context.fillStyle = "blue";
-				GUI.debugDrawTileText(context, index, validTiles[index]);
-			}
+			mousedownTile = positionIndex;
 		},
 		
 		handlePointerup: function(event)
@@ -452,6 +500,47 @@ var GUI = (function()
 			
 			let positionCartesian = GUI.canvasToCartesian(pointerX, pointerY);
 			if(!Board.isValidCartesian(positionCartesian.x, positionCartesian.y)) return;
+			let positionIndex = Board.calculateIndexFromCartesian(positionCartesian.x, positionCartesian.y);
+			
+			// mousedown/mouseup is what constitutes a click.
+			if(mousedownTile === positionIndex && mousedownTile !== null)
+			{
+				// TODO:this need to be factored somewhere else
+				// see if we selected a piece
+				let selectedPieceID = Pieces.getSelectedPiece();
+				let pieceID = Board.getTilePieceOccupiedIndex(positionIndex);
+				if(selectedPieceID)
+				{
+					if(pieceID)
+					{
+						// assume it's attack
+						Pieces.abilityMeleeAttackPiece(selectedPieceID, pieceID);
+						
+						// deselect at the end of day
+						Pieces.deselectPiece();
+					}
+					else 
+					{
+						// else, assume it's movement
+						Pieces.abilityMovePiece(selectedPieceID, positionIndex);
+						// deselect at the end of day
+						Pieces.deselectPiece();
+					}
+				}
+				else 
+				{
+					// assume we're selecting 
+					if(pieceID)
+					{
+						Pieces.selectPiece(pieceID);
+					}
+				}
+			}
+			else 
+			{
+				mousedownTile = null;
+				Pieces.deselectPiece();
+			}
 		},
 		
 		handlePointermove: function(event)
@@ -463,6 +552,7 @@ var GUI = (function()
 			
 			let positionCartesian = GUI.canvasToCartesian(pointerX, pointerY);
 			if(!Board.isValidCartesian(positionCartesian.x, positionCartesian.y)) return;
+			let positionIndex = Board.calculateIndexFromCartesian(positionCartesian.x, positionCartesian.y);
 		},
 	};
 })();

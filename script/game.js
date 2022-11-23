@@ -87,6 +87,20 @@ var Game = (function()
 			return state[category][property];
 		},
 		
+		importState: function(dataString)
+		{
+			state = JSON.parse(dataString);
+			// do some validation... eventually
+			
+			// obviously we'll have to update everything
+			GUI.updateAll();
+		},
+		
+		exportState: function()
+		{
+			return JSON.stringify(state);
+		},
+		
 		/*
 			We flatten ID objects into their own category, 
 				and store their IDs in a hardcoded category,

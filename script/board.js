@@ -169,15 +169,22 @@ var Board = (function()
 			return validTilesDistance;
 		},
 		
-		/*
+		/**
 			Calculates distance by pathfinding.
 				This DOES account for invalid tiles.
 			If there is no path, return undefined.
 			
-			TODO: fix for when we add variable distance terrains. we can be lazy because all distances are 1 for now.
+			TODO: fix to prioritize least distance tiles when we add variable movecost terrains. 
+			we can be lazy because all distances are 1 for now.
+			
+			@param originIndex - the position index of the origin tile
+			@param range - the cutoff at which the algorithm will stop. if not specified, then range is infinite.
 		 */
-		calculatePathfindingDistanceMapByIndex: function(originIndex, destinationIndex)
+		calculateTilePathfindingDistanceMapByIndex: function(originIndex, range)
 		{
+			// failsafe
+			if(range === 0) return {};
+			
 			let tiles = Game.getState("map","tiles");
 			
 			// the distance from a point to itself is always 0.
@@ -197,15 +204,21 @@ var Board = (function()
 				let neighbours = Board.getNeighboursIndexByIndex(tileToVisit);
 				for(let neighbourCount = 0; neighbourCount < neighbours.length; neighbourCount++)
 				{
+					// range limiting map size for calculating move range
+					let distance = tileDistance + 1;
+					if(range > 0) 
+					{
+						if(distance > range) continue;
+					}
+					
 					let neighbour = neighbours[neighbourCount];
 					if(!Board.isTileValidDestinationByIndex(neighbour)) continue;
 					// don't repeat a visited tile.
+
 					if(tilesDistance[neighbour] === undefined)
 					{
 						tilesToVisit.push(neighbour);
 					}
-					//
-					let distance = tileDistance + 1;
 					if(tilesDistance[neighbour] === undefined || tilesDistance[neighbour] > distance)
 					{
 						tilesDistance[neighbour] = distance;
@@ -226,6 +239,17 @@ var Board = (function()
 		{
 			if(Board.calculateDistanceToTileByIndex(index, neighbourIndex) === 1) return true;
 			return false;
+		},
+		
+		getTilePieceOccupiedIndex: function(index)
+		{
+			let tile = Board.getTileFromIndex(index);
+			if(!tile) 
+			{
+				console.warn(`Board.getTilePieceOccupiedIndex: cannot find tile for index "${index}".`);
+				return;
+			}
+			return tile.pieceID;
 		},
 		
 		isTilePieceOccupiedIndex: function(index)
