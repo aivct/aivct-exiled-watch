@@ -252,7 +252,6 @@ var Pieces = (function()
 			return type[propertyName];
 		},
 		
-		
 		movePieceById: function(pieceID, newPosition)
 		{
 			// check if new position is occupied
@@ -378,6 +377,20 @@ var Pieces = (function()
 			// add some XP for the defender as well.
 			Pieces.addXP(attackerID, BASE_XP_PER_MOVE);
 			Pieces.addXP(defenderID, BASE_XP_PER_MOVE);
+		},
+		
+		/*
+			Ability functions require APs, 
+				and will check beforehand.
+		 */
+		abilityMovePiece: function()
+		{
+			
+		},
+		
+		abilityAttackPiece: function()
+		{
+			
 		},
 		
 		endTurn: function()

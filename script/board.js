@@ -99,6 +99,9 @@ var Board = (function()
 			return index;
 		},
 		
+		/*
+			Calculates distance WITHOUT pathfinding.
+		 */
 		calculateDistanceToTileByIndex: function(index, neighbourIndex)
 		{
 			let cartesian = Board.calculateCartesianFromIndex(index);
@@ -117,8 +120,9 @@ var Board = (function()
 			XXOXX
 			 XXX
 			  X
+			TODO: deprecate this awful code.
 		 */
-		calculateValidDestinationTilesIndexByIndex: function(index, range = 1)
+		calculateValidDestinationTilesDistanceByIndex: function(index, range = 1)
 		{
 			let tiles = Game.getState("map","tiles");
 			// filter all tiles which are in range first
@@ -134,6 +138,7 @@ var Board = (function()
 				// neighbours algo 
 				// take neighbours, if valid, addUnique, repeat up to range.
 			// I just realized I re-invented dijkstra, but worse.
+			let validTilesDistance = {};
 			let validTiles = [];
 			let lastTiles = [index];
 			for(var currentRange = 1; currentRange <= range; currentRange++)
@@ -152,12 +157,64 @@ var Board = (function()
 						{
 							addUniqueElementInArray(currentTiles, neighbour);
 							addUniqueElementInArray(validTiles, neighbour);
+							if(validTilesDistance[neighbour] === undefined || validTilesDistance[neighbour] > currentRange)
+							{
+								validTilesDistance[neighbour] = currentRange;
+							}
 						}
 					}
 				}
 				lastTiles = currentTiles;
 			}
-			return validTiles;
+			return validTilesDistance;
+		},
+		
+		/*
+			Calculates distance by pathfinding.
+				This DOES account for invalid tiles.
+			If there is no path, return undefined.
+			
+			TODO: fix for when we add variable distance terrains. we can be lazy because all distances are 1 for now.
+		 */
+		calculatePathfindingDistanceMapByIndex: function(originIndex, destinationIndex)
+		{
+			let tiles = Game.getState("map","tiles");
+			
+			// the distance from a point to itself is always 0.
+			let tilesDistance = {};
+			tilesDistance[originIndex] = 0;
+			
+			let tilesToVisit = [];
+			let tileToVisit = originIndex;
+			// do while there are still unvisited 
+			// NOTE: unshift and pop creates a FIFO order
+			// which does the work of sorting the closest tiles for us automatically.
+			// shift is surprisingly faster than pop, and of course push is faster than unshift
+			do
+			{
+				let tileDistance = tilesDistance[tileToVisit];
+				// get neighbours
+				let neighbours = Board.getNeighboursIndexByIndex(tileToVisit);
+				for(let neighbourCount = 0; neighbourCount < neighbours.length; neighbourCount++)
+				{
+					let neighbour = neighbours[neighbourCount];
+					if(!Board.isTileValidDestinationByIndex(neighbour)) continue;
+					// don't repeat a visited tile.
+					if(tilesDistance[neighbour] === undefined)
+					{
+						tilesToVisit.push(neighbour);
+					}
+					//
+					let distance = tileDistance + 1;
+					if(tilesDistance[neighbour] === undefined || tilesDistance[neighbour] > distance)
+					{
+						tilesDistance[neighbour] = distance;
+					}
+				}
+			}
+			while( (tileToVisit = tilesToVisit.shift()) !== undefined );
+			
+			return tilesDistance;
 		},
 		
 		/* 

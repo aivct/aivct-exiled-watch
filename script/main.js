@@ -1,13 +1,4 @@
-/*
-	0.0.4 changelog:
-	-added ability to attack and defend
-	-added XP indicators for units 
-	-added spriteSheet type for image assets definitions
-	0.0.3 changelog:
-	-changed mouse to pointer events for compatibility
- */
-
-const VERSION = "0.0.4"; 
+const VERSION = "0.0.5"; 
  
 // basic init functions
 function initialize()
@@ -40,7 +31,7 @@ var Assets = (function()
 	/*
 		Image types:
 			"sprite": simple as that, a humble image
-			"sheet": a sheet of sprites which can be automatically cut (TBD)
+			"sheet": a sheet of sprites which can be automatically cut
 	 */
 	var imagesToLoad = {
 		"spearman": {
@@ -376,6 +367,15 @@ var GUI = (function()
 			context.stroke();
 		},
 		
+		/* DEBUG */
+		debugDrawTileText: function(context, tilePosition, text)
+		{	
+			let positionCartesian = Board.calculateCartesianFromIndex(tilePosition);
+			let canvasPosition = GUI.cartesianToCanvas(positionCartesian.x, positionCartesian.y);
+			
+			context.fillText(text, canvasPosition.x + tileSize/2, canvasPosition.y + tileSize/2);
+		},
+		
 		cartesianToCanvas: function(x, y)
 		{
 			let canvasX = offsetX+(tileSize+tileOffset)*x;
@@ -432,11 +432,14 @@ var GUI = (function()
 			let context = effectsLayer.getContext();
 			context.clearRect(0,0,canvasWidth,canvasHeight);
 			let positionIndex = Board.calculateIndexFromCartesian(positionCartesian.x, positionCartesian.y);
-			let validTiles = Board.calculateValidDestinationTilesIndexByIndex(positionIndex, 5);
+			let validTiles = Board.calculatePathfindingDistanceMapByIndex(positionIndex, 5);
 			
-			for(var index = 0; index < validTiles.length; index++)
+			for(var index in validTiles)
 			{
-				GUI.drawHighlightedTile(context, validTiles[index]);
+				GUI.drawHighlightedTile(context, index);
+				// distance
+				context.fillStyle = "blue";
+				GUI.debugDrawTileText(context, index, validTiles[index]);
 			}
 		},
 		

@@ -1,0 +1,8 @@
+0.0.5 changelog:
+-redid pathfinding to just use djikstra
+0.0.4 changelog:
+-added ability to attack and defend
+-added XP indicators for units 
+-added spriteSheet type for image assets definitions
+0.0.3 changelog:
+-changed mouse to pointer events for compatibility
