@@ -6,6 +6,35 @@
 	In later versions, a piece shall comprise of the soldiers/monsters drafted to fight.
 	Its attack/defense function is also relegated to an aggregation of individual functions.
 	
+	//goal
+	 attack once per turn.
+	
+	// overhaul possibilities: attack/defense swarm effect:
+	attack, defense, damage, armor.
+	// stolen from total war (though battle brothers does it the same way)
+	where %hit = baserate + (melee attack - melee defense);
+	and damage = attack damage - armor;
+	 and that whole thing times 12.
+	
+	// do we also want a blunt/pierce/slash thingy?
+	ie, blunt = 50%, pierce = 35%, slash = 10%;
+	
+	but then that's Rock-Paper-Scissors again...? So probably okay.
+	// perhaps we could outsource a few stats to weapons.
+	ie: 
+		"doppelsodner": {
+			"weapon": "greatsword"
+			"melee": 35,
+			"defense": 20,
+			"ranged": 0,
+		}
+		
+		"greatsword": {
+			"damage": 7,
+			"type": slash,
+		}
+	
+	
 	TODO:
 		// kill all the dead pieces which have no meaningful connection.
 		Pieces.prune();
@@ -16,6 +45,12 @@
 			getAPCost for ability X
 			
 		Separate AP into movement points and AP
+		
+		One day we're going to have overhaul attack and defense as well.
+		
+		Overhaul AP costs.
+			Ie, a horseman with 5 attacks per turn is too OP,
+				and even 3 attacks is stretching it.
  */
 var Pieces = (function()
 {
@@ -160,6 +195,15 @@ var Pieces = (function()
 			Pieces.movePieceById(1011, Board.calculateIndexFromCartesian(6,3));
 			Game.createNewIDObject("pieces", createEnemySpearman);
 			Pieces.movePieceById(1012, Board.calculateIndexFromCartesian(5,4));
+			Game.createNewIDObject("pieces", createEnemySpearman);
+			Pieces.movePieceById(1013, Board.calculateIndexFromCartesian(6,4));
+			Game.createNewIDObject("pieces", createEnemySpearman);
+			Pieces.movePieceById(1014, Board.calculateIndexFromCartesian(6,6));
+			Game.createNewIDObject("pieces", createEnemySpearman);
+			Pieces.movePieceById(1015, Board.calculateIndexFromCartesian(6,7));
+			
+			Game.createNewIDObject("pieces", createGenericSpearman);
+			Pieces.movePieceById(1016, Board.calculateIndexFromCartesian(0,0));
 			
 			
 			Pieces.abilityMovePiece(1002, Board.calculateIndexFromCartesian(3,2));
@@ -527,8 +571,8 @@ var Pieces = (function()
 		getValidMovementMap: function(pieceID)
 		{
 			let piecePosition = Pieces.getPiecePositionByID(pieceID);
-			if(!piecePosition) return;
-			
+			if(!piecePosition && piecePosition !== 0) return;
+
 			let range = Pieces.getPieceMovementRangeByID(pieceID);
 			// if no range, do nothing 
 			if(!range) return;
@@ -664,6 +708,7 @@ var Pieces = (function()
 			
 			// set update flag because of a significant change
 			GUI.updateUnits();
+			GUI.updateEffects();
 		},
 		
 		// TODO: perhaps we shall factor AI as its own thing someday.

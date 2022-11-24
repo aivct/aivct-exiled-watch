@@ -185,11 +185,15 @@ var GUI = (function()
 	var mapLayer;
 	var unitsLayer;
 	var effectsLayer;
+	var UILayer;
 	
 	// TODO: implement resizing
 	var canvasWidth = 800;
 	var canvasHeight = 600;
 	
+	// Square font should be in multiples of 5, because it's a pixel font designed to be used that way.
+	var fontFamily = "Square-Font";
+	var fontSize = 20;
 	// use for scrolling
 	var offsetX;
 	var offsetY;
@@ -225,6 +229,9 @@ var GUI = (function()
 			effectsLayer = GUI.createEffectsLayer();
 			GUIContainer.appendChild(effectsLayer.getCanvas());
 			
+			UILayer = GUI.createUILayer();
+			GUIContainer.appendChild(UILayer.getCanvas());
+			
 			document.body.appendChild(GUIContainer);
 		},
 		
@@ -255,11 +262,21 @@ var GUI = (function()
 			return layer;
 		},
 		
+		createUILayer: function()
+		{
+			let layer = new CanvasLayer(canvasWidth, canvasHeight, GUI.drawUI);
+			layer.width = canvasWidth;
+			layer.height = canvasHeight;
+			
+			return layer;
+		},
+		
 		draw: function()
 		{
 			mapLayer.draw();
 			unitsLayer.draw();
 			effectsLayer.draw();
+			UILayer.draw();
 		},
 		
 		drawMap: function(context, canvas)
@@ -320,7 +337,7 @@ var GUI = (function()
 		{
 			if(!unit) return;
 			let position = unit.position;
-			if(!position) return; // it's merely undeployed, doesn't matter to us at the renderer.
+			if(!position && position !== 0) return; // it's merely undeployed, doesn't matter to us at the renderer.
 			
 			let positionCartesian = Board.calculateCartesianFromIndex(position);
 			let canvasPosition = GUI.cartesianToCanvas(positionCartesian.x, positionCartesian.y);
@@ -389,6 +406,9 @@ var GUI = (function()
 		{
 			context.clearRect(0,0,canvas.width,canvas.height);
 			
+			let font = `${fontSize}px ${fontFamily}`;
+			if(context.font !== font) context.font = font;
+			
 			let selectedPieceID = Pieces.getSelectedPiece();
 			if(selectedPieceID)
 			{
@@ -436,13 +456,18 @@ var GUI = (function()
 			context.stroke();
 		},
 		
+		drawUI: function(context, canvas)
+		{
+			
+		},
+		
 		/* DEBUG */
 		debugDrawTileText: function(context, tilePosition, text)
 		{	
 			let positionCartesian = Board.calculateCartesianFromIndex(tilePosition);
 			let canvasPosition = GUI.cartesianToCanvas(positionCartesian.x, positionCartesian.y);
 			
-			context.fillText(text, canvasPosition.x + tileSize/2, canvasPosition.y + tileSize/2);
+			context.fillText(text, canvasPosition.x + tileSize/2, canvasPosition.y + (tileSize)/2);
 		},
 		
 		cartesianToCanvas: function(x, y)
@@ -485,11 +510,17 @@ var GUI = (function()
 			effectsLayer.update();
 		},
 		
+		updateUI: function()
+		{
+			UILayer.update();
+		},
+		
 		updateAll: function()
 		{
 			mapLayer.update();
 			unitsLayer.update();
 			effectsLayer.update();
+			UILayer.update();
 		},
 		
 		handlePointerdown: function(event)
@@ -518,6 +549,7 @@ var GUI = (function()
 			if(!Board.isValidCartesian(positionCartesian.x, positionCartesian.y)) return;
 			let positionIndex = Board.calculateIndexFromCartesian(positionCartesian.x, positionCartesian.y);
 			
+			// TODO: fix this mess of a click handler...
 			// mousedown/mouseup is what constitutes a click.
 			if(mousedownTile === positionIndex && mousedownTile !== null)
 			{
