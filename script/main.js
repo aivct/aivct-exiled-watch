@@ -4,8 +4,6 @@ const VERSION = "0.1.0";
 // basic init functions
 function initialize()
 {
-	Assets.initialize();
-	
 	Game.initialize();
 	Pieces.initialize();
 	
@@ -39,6 +37,14 @@ var Assets = (function()
 			"src": "./assets/spearman.png",
 			"type": "sprite",
 		},
+		"swordsman": {
+			"src": "./assets/swordsman.png",
+			"type": "sprite",
+		},
+		"horseman": {
+			"src": "./assets/horseman.png",
+			"type": "sprite",
+		},
 		"undead_spearman": {
 			"src": "./assets/undead_spearman.png",
 			"type": "sprite",
@@ -68,11 +74,12 @@ var Assets = (function()
 	}
 	
 	var checkIfAllImagesAreLoaded = () => {
+		console.log(`Assets: loading image ${imageProcessedCount}/${imageCount}...`);
 		if(imageProcessedCount >= imageCount)
 		{
 			isImagesLoaded = true;
 			cutAllSheets();
-			// put an init function here.
+			initialize();
 			return true;
 		}
 		// put a function here updating the progress bar
@@ -321,27 +328,28 @@ var GUI = (function()
 			let sprite = Pieces.getPieceImageByObject(unit);
 			if(!sprite) return;
 			// draw depending on its HP, most likely temp for now
-			let spritesToDraw = 12;
 			let ID = unit?.ID;
 			if(!ID) return;
 			let unitHPPercent = Pieces.getPieceHPByID(ID) / Pieces.getPieceMaxHPByID(ID);
 			let unitLevel = Pieces.getPieceLevelByID(ID);
+			let drawSettings = Pieces.getPieceTypePropertyByID(ID, "drawSettings");
+			let spritesToDraw = drawSettings.formationCount;
 			spritesToDraw = unitHPPercent * spritesToDraw;
+			let width = drawSettings.width;
+			let height = drawSettings.height;
+			let rowWidth = drawSettings.rowWidth;
+			let marginX = drawSettings.marginX;
+			let marginY = drawSettings.marginY;
+			let rowOddX = drawSettings.rowOddX;
 			for(let index = 0; index < spritesToDraw; index++)
 			{
-				// TODO: change hardcoded to something else
-				let width = 6;
-				let height = 6;
-				let rowWidth = 4;
-				let marginX = 4;
-				let marginY = 2;
 				let rowCount = Math.floor(index / rowWidth);
 				if(rowCount === 0) context.globalAlpha = 1;
 				if(rowCount === 1) context.globalAlpha = 0.66;
 				if(rowCount === 2) context.globalAlpha = 0.33;
 				
 				sprite.draw(context
-					, canvasPosition.x + tileSize - marginX - width * (index % rowWidth) - sprite.getWidth() - (rowCount % 2)
+					, canvasPosition.x + tileSize - marginX - width * (index % rowWidth) - sprite.getWidth() - ((rowCount % 2) * rowOddX)
 					, canvasPosition.y + tileSize - marginY - height * (rowCount) - sprite.getHeight());
 			}
 			
@@ -367,6 +375,14 @@ var GUI = (function()
 			context.fillStyle = "#FAFF00";
 			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize, tileSize * APBarRatio, 2);
 			
+			// HP indicator
+			let HPBarRatio = Pieces.getPieceHPByID(ID) / Pieces.getPieceMaxHPByID(ID);
+			
+			context.fillStyle = "#7b0404";
+			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize + 4, tileSize, 3);
+			
+			context.fillStyle = "red";
+			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize + 4, tileSize * HPBarRatio, 2);
 		},
 		
 		drawEffects: function(context, canvas)
@@ -378,9 +394,9 @@ var GUI = (function()
 			{
 				let selectedPieceAP = Pieces.getPieceAPByID(selectedPieceID);
 				
-				// highlight selected
+				// highlight selected in green
 				let selectedPiecePosition = Pieces.getPiecePositionByID(selectedPieceID);
-				context.strokeStyle = "green";
+				context.strokeStyle = "#01fe4d";
 				context.lineWidth = 2;
 				GUI.drawHighlightedTile(context, selectedPiecePosition);
 				

@@ -3,8 +3,6 @@
 	
 	Like chess, a piece that can move and attack.
 	
-	
-	
 	In later versions, a piece shall comprise of the soldiers/monsters drafted to fight.
 	Its attack/defense function is also relegated to an aggregation of individual functions.
 	
@@ -16,26 +14,97 @@
 		
 		Unify pieces, AP, and abilities.
 			getAPCost for ability X
+			
+		Separate AP into movement points and AP
  */
 var Pieces = (function()
 {
 	const BASE_XP_PER_MOVE = 5; // how much a basic attack or defense will give in XP
 	
+	// TODO: factor formation count out of drawSettings and into the rest of everything
 	var piecesStatistics = 
 	{
 		"spearman": {
 			"name": "Spearman",
 			"image": "spearman",
+			"drawSettings": 
+			{
+				// not its actual width or height, 
+				// but the DISPLAY width and height for formations
+				"width": 6,
+				"height": 6,
+				"rowWidth": 4,
+				"rowOddX": 1,
+				"marginX": 4,
+				"marginY": 2,
+				"formationCount": 12
+			},
 			"HP": 100,
 			"AP": 3,
 			"attack": 10,
+			"defense": 0,
+			"onKillXP": 50,
+		},
+		
+		"swordsman": {
+			"name": "Swordsman",
+			"image": "swordsman",
+			"drawSettings": 
+			{
+				// not its actual width or height, 
+				// but the DISPLAY width and height for formations
+				"width": 6,
+				"height": 6,
+				"rowWidth": 4,
+				"rowOddX": 1,
+				"marginX": 3,
+				"marginY": 2,
+				"formationCount": 12
+			},
+			"HP": 100,
+			"AP": 3,
+			"attack": 15,
 			"defense": 5,
+			"onKillXP": 50,
+		},
+		
+		"horseman": {
+			"name": "Horseman",
+			"image": "horseman",
+			"drawSettings": 
+			{
+				// not its actual width or height, 
+				// but the DISPLAY width and height for formations
+				"width": 6,
+				"height": 4,
+				"rowWidth": 1,
+				"rowOddX": 6,
+				"marginX": 1,
+				"marginY": 1,
+				"formationCount": 3
+			},
+			"HP": 100,
+			"AP": 5,
+			"attack": 10,
+			"defense": 0,
 			"onKillXP": 50,
 		},
 		
 		"undead_spearman": {
 			"name": "Undead Spearman",
 			"image": "undead_spearman",
+			"drawSettings": 
+			{
+				// not its actual width or height, 
+				// but the DISPLAY width and height for formations
+				"width": 6,
+				"height": 6,
+				"rowWidth": 4,
+				"rowOddX": 1,
+				"marginX": 4,
+				"marginY": 2,
+				"formationCount": 12
+			},
 			"HP": 50,
 			"AP": 2,
 			"attack": 8,
@@ -56,22 +125,42 @@ var Pieces = (function()
 		newGame: function()
 		{
 			let createGenericSpearman = () => {return Pieces.createPiece("spearman",1)};
+			let createGenericSwordsman = () => {return Pieces.createPiece("swordsman",1)};
+			let createGenericHorseman = () => {return Pieces.createPiece("horseman",1)};
 			
 			let createEnemySpearman = () => {return Pieces.createPiece("undead_spearman",2)};
 			
 			// TESTING
 			Game.createNewIDObject("pieces", createGenericSpearman);
-			Game.createNewIDObject("pieces", createGenericSpearman);
-			Game.createNewIDObject("pieces", createGenericSpearman);
-			
-			Game.createNewIDObject("pieces", createEnemySpearman);
-			
 			Pieces.movePieceById(1001, Board.calculateIndexFromCartesian(1,1));
+			Game.createNewIDObject("pieces", createGenericSpearman);
 			Pieces.movePieceById(1002, Board.calculateIndexFromCartesian(2,2));
+			Game.createNewIDObject("pieces", createGenericSpearman);
 			Pieces.movePieceById(1003, Board.calculateIndexFromCartesian(1,3));
 			
+			Game.createNewIDObject("pieces", createEnemySpearman);
 			Pieces.movePieceById(1004, Board.calculateIndexFromCartesian(10,1));
 			Pieces.movePieceById(1004, Board.calculateIndexFromCartesian(4,2));
+			
+			Game.createNewIDObject("pieces", createGenericSwordsman);
+			Pieces.movePieceById(1005, Board.calculateIndexFromCartesian(2,3));
+			
+			Game.createNewIDObject("pieces", createGenericHorseman);
+			Pieces.movePieceById(1006, Board.calculateIndexFromCartesian(2,4));
+			
+			Game.createNewIDObject("pieces", createEnemySpearman);
+			Pieces.movePieceById(1007, Board.calculateIndexFromCartesian(4,3));
+			Game.createNewIDObject("pieces", createEnemySpearman);
+			Pieces.movePieceById(1008, Board.calculateIndexFromCartesian(4,4));
+			Game.createNewIDObject("pieces", createEnemySpearman);
+			Pieces.movePieceById(1009, Board.calculateIndexFromCartesian(4,5));
+			Game.createNewIDObject("pieces", createEnemySpearman);
+			Pieces.movePieceById(1010, Board.calculateIndexFromCartesian(4,6));
+			Game.createNewIDObject("pieces", createEnemySpearman);
+			Pieces.movePieceById(1011, Board.calculateIndexFromCartesian(6,3));
+			Game.createNewIDObject("pieces", createEnemySpearman);
+			Pieces.movePieceById(1012, Board.calculateIndexFromCartesian(5,4));
+			
 			
 			Pieces.abilityMovePiece(1002, Board.calculateIndexFromCartesian(3,2));
 			Pieces.abilityMeleeAttackPiece(1002, 1004);
@@ -140,6 +229,14 @@ var Pieces = (function()
 			return livingPieces;
 		},
 		
+		getTeamPiecesID: function(team)
+		{
+			let pieces = Game.getState("pieces");
+			let livingPieces = pieces.filter(piece => {return (!piece.isDead) && piece.team === team});
+			let livingPiecesID = (livingPieces).map(piece => {return piece.ID});
+			return livingPiecesID;
+		},
+		
 		getPieceImageByID: function(pieceID)
 		{
 			var piece = Pieces.getPiece(pieceID);
@@ -164,14 +261,25 @@ var Pieces = (function()
 		{
 			let baseAttack = Pieces.getPieceTypePropertyByID(pieceID, "attack");
 			
-			return baseAttack;
+			// level increase
+			let level = Pieces.getPieceLevelByID(pieceID);
+			let levelBonus = level;
+			
+			let attack = baseAttack + levelBonus;
+			
+			return attack;
 		},
 		
 		getPieceDefenseByID: function(pieceID)
 		{
 			let baseDefense = Pieces.getPieceTypePropertyByID(pieceID, "defense");
 			
-			return baseDefense;
+			let level = Pieces.getPieceLevelByID(pieceID);
+			let levelBonus = level;
+			
+			let defense = baseDefense + levelBonus;
+			
+			return defense;
 		},
 		
 		getPieceHPByID: function(pieceID)
@@ -499,6 +607,11 @@ var Pieces = (function()
 		
 		abilityMeleeAttackPiece: function(attackerID, defenderID)
 		{
+			// you can't attack yourself!
+			if(attackerID === defenderID) return;
+			// or your friends!
+			if(Pieces.getPieceTeamByID(attackerID) === Pieces.getPieceTeamByID(defenderID)) return;
+			
 			let attackerPosition = Pieces.getPiecePositionByID(attackerID);
 			let defenderPosition = Pieces.getPiecePositionByID(defenderID);
 			
@@ -553,12 +666,49 @@ var Pieces = (function()
 			GUI.updateUnits();
 		},
 		
-		AITurn: function()
+		// TODO: perhaps we shall factor AI as its own thing someday.
+		AITurn: function(team)
 		{
-			// TODO:
 			// really dumb AI. for now, just move left, 
 			// and if you can't move left, then attack something close 
 			// and if you can't attack something close, well tough luck.
+			var teamPiecesID = Pieces.getTeamPiecesID(team);
+			
+			for(var pieceIndex = 0; pieceIndex < teamPiecesID.length; pieceIndex++)
+			{
+				let pieceID = teamPiecesID[pieceIndex];
+				
+				let movementMap = Pieces.getValidMovementMap(pieceID);
+				// sort by leftmost
+				let leftmostTile = null;
+				let leftmostIndex;
+				for(var tileIndex in movementMap)
+				{
+					let cartesian = Board.calculateCartesianFromIndex(tileIndex);
+					if(!leftmostTile || leftmostTile?.x > cartesian.x)
+					{
+						leftmostTile = cartesian;
+						leftmostIndex = tileIndex;
+					}
+				}
+				// in case there is no valid destination, do nothing.
+				if(leftmostIndex)
+				{
+					Pieces.abilityMovePiece(pieceID, leftmostIndex);
+				}
+				// if we still have AP left
+				let AP = Pieces.getPieceAPByID(pieceID);
+				if(AP > 0)
+				{
+					// see if we can attack anything
+					let attackTargetsID = Pieces.getValidTargetsID(pieceID, 1);
+					let targetID = attackTargetsID[0];
+					if(targetID)
+					{
+						Pieces.abilityMeleeAttackPiece(pieceID, targetID);
+					}
+				}
+			}
 		},
 	}
 })();

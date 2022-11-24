@@ -1,3 +1,10 @@
+0.1.1
+-added new units:
+	-swordsman! more attack, less defense.
+	-horseman, has a lot of AP, but very low defense. get in, get out!
+-slightly refactored how drawing specifications are done for new units 
+-terribly stupid AI!
+-added HP and AP bars
 0.1.0 
 -you can FINALLY move, click and attack, 
 0.0.5 changelog:

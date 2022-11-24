@@ -1,9 +1,4 @@
 window.onload = function()
 {
-	initialize();
-}
-
-function initialize()
-{
-	
+	Assets.initialize();
 }
