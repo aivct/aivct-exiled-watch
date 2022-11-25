@@ -58,6 +58,16 @@ var Board = (function()
 			return Board.getTileFromIndex(index);
 		},
 		
+		getMapWidth: function()
+		{
+			return Game.getState("map","width");
+		},
+		
+		getMapHeight: function()
+		{
+			return Game.getState("map","height");
+		},
+		
 		getNeighboursIndexByIndex: function(index)
 		{
 			let neighboursDelta = [{x:1,y:0},{x:0,y:1},{x:-1,y:0},{x:0,y:-1}];

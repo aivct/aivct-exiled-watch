@@ -37,6 +37,10 @@ var Assets = (function()
 			"src": "./assets/spearman.png",
 			"type": "sprite",
 		},
+		"pikeman": {
+			"src": "./assets/pikeman.png",
+			"type": "sprite",
+		},
 		"swordsman": {
 			"src": "./assets/swordsman.png",
 			"type": "sprite",
@@ -191,9 +195,9 @@ var GUI = (function()
 	var canvasWidth = 800;
 	var canvasHeight = 600;
 	
-	// Square font should be in multiples of 5, because it's a pixel font designed to be used that way.
+	// Square font should be in multiples of 6, though font height is 5, due to odd quirks in generation
 	var fontFamily = "Square-Font";
-	var fontSize = 20;
+	var fontSize = 18;
 	// use for scrolling
 	var offsetX;
 	var offsetY;
@@ -347,11 +351,10 @@ var GUI = (function()
 			// draw depending on its HP, most likely temp for now
 			let ID = unit?.ID;
 			if(!ID) return;
-			let unitHPPercent = Pieces.getPieceHPByID(ID) / Pieces.getPieceMaxHPByID(ID);
 			let unitLevel = Pieces.getPieceLevelByID(ID);
 			let drawSettings = Pieces.getPieceTypePropertyByID(ID, "drawSettings");
 			let spritesToDraw = drawSettings.formationCount;
-			spritesToDraw = unitHPPercent * spritesToDraw;
+			spritesToDraw = Pieces.getPieceSoldierCountByID(ID);
 			let width = drawSettings.width;
 			let height = drawSettings.height;
 			let rowWidth = drawSettings.rowWidth;
@@ -363,7 +366,8 @@ var GUI = (function()
 				let rowCount = Math.floor(index / rowWidth);
 				if(rowCount === 0) context.globalAlpha = 1;
 				if(rowCount === 1) context.globalAlpha = 0.66;
-				if(rowCount === 2) context.globalAlpha = 0.33;
+				if(rowCount === 2) context.globalAlpha = 0.50;
+				if(rowCount === 3) context.globalAlpha = 0.33;
 				
 				sprite.draw(context
 					, canvasPosition.x + tileSize - marginX - width * (index % rowWidth) - sprite.getWidth() - ((rowCount % 2) * rowOddX)
@@ -467,7 +471,7 @@ var GUI = (function()
 			let positionCartesian = Board.calculateCartesianFromIndex(tilePosition);
 			let canvasPosition = GUI.cartesianToCanvas(positionCartesian.x, positionCartesian.y);
 			
-			context.fillText(text, canvasPosition.x + tileSize/2, canvasPosition.y + (tileSize)/2);
+			context.fillText(text, canvasPosition.x + tileSize/2, canvasPosition.y + (tileSize)/2+(fontSize)/2);
 		},
 		
 		cartesianToCanvas: function(x, y)

@@ -1,3 +1,12 @@
+0.1.3
+-redid combat in the style of total war unit cards
+	-now includes weapon damage and armor 
+	-attack and defense now affect hit chance instead
+	-factored formationCount out of drawSettings
+	-attack now involves formationCount as a direct multiplier.
+	-obviously, now units also have proportionally more HP
+-formally added a stress test, mostly out of curiosity
+-added a new unit: pikemen, an upgraded spearman
 0.1.2
 -fixed a (0,0) bug causing units to disappear.
 -added a custom font!

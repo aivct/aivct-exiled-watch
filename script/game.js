@@ -4,7 +4,13 @@
 	Data should be primitives, or object primitives, for easier saving and loading. 
 	- Use helper functions instead of prototypes.
 	- Try not to have arrays within arrays and objects within objects, 
-		though if it is all primitives it should be fine.
+		though it is not a hard and fast rule, this should help preserve data integrity down the road.
+	- References are NOT allowed. Instead, use IDs.
+		ie, tile.unitOccupied = unitID; unit.tilePosition = tileIndex;
+	
+	We are effectively reinventing the wheel for databases, 
+		but that's what they are for in data-oriented design, 
+		which is more suited for game programming than OOP.
  */
 var Game = (function()
 {

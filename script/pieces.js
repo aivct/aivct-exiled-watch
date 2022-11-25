@@ -8,14 +8,7 @@
 	
 	//goal
 	 attack once per turn.
-	
-	// overhaul possibilities: attack/defense swarm effect:
-	attack, defense, damage, armor.
-	// stolen from total war (though battle brothers does it the same way)
-	where %hit = baserate + (melee attack - melee defense);
-	and damage = attack damage - armor;
-	 and that whole thing times 12.
-	
+		
 	// do we also want a blunt/pierce/slash thingy?
 	ie, blunt = 50%, pierce = 35%, slash = 10%;
 	
@@ -38,6 +31,10 @@
 	TODO:
 		// kill all the dead pieces which have no meaningful connection.
 		Pieces.prune();
+		// undeploy every unit for when that is needed.
+		Pieces.undeployAll();
+		
+		Factor out the GUI interface.
 		
 		Overhaul levels to account for promotions (0.2.x);
 		
@@ -45,15 +42,14 @@
 			getAPCost for ability X
 			
 		Separate AP into movement points and AP
-		
-		One day we're going to have overhaul attack and defense as well.
-		
+				
 		Overhaul AP costs.
 			Ie, a horseman with 5 attacks per turn is too OP,
 				and even 3 attacks is stretching it.
  */
 var Pieces = (function()
 {
+	const BASE_HIT_CHANCE_PERCENT = 35; 
 	const BASE_XP_PER_MOVE = 5; // how much a basic attack or defense will give in XP
 	
 	// TODO: factor formation count out of drawSettings and into the rest of everything
@@ -71,14 +67,40 @@ var Pieces = (function()
 				"rowWidth": 4,
 				"rowOddX": 1,
 				"marginX": 4,
-				"marginY": 2,
-				"formationCount": 12
+				"marginY": 3,
 			},
-			"HP": 100,
+			"HP": 100*12,
 			"AP": 3,
-			"attack": 10,
-			"defense": 0,
+			"attack": 20,
+			"defense": 15,
+			"damage": 8,
+			"armor": 0,
 			"onKillXP": 50,
+			"formationCount": 12,
+		},
+		
+		"pikeman": {
+			"name": "Pikeman",
+			"image": "pikeman",
+			"drawSettings": 
+			{
+				// not its actual width or height, 
+				// but the DISPLAY width and height for formations
+				"width": 6,
+				"height": 6,
+				"rowWidth": 4,
+				"rowOddX": 1,
+				"marginX": 3,
+				"marginY": 3,
+			},
+			"HP": 100*12,
+			"AP": 3,
+			"attack": 25,
+			"defense": 25,
+			"damage": 10,
+			"armor": 4,
+			"onKillXP": 75,
+			"formationCount": 12,
 		},
 		
 		"swordsman": {
@@ -93,14 +115,16 @@ var Pieces = (function()
 				"rowWidth": 4,
 				"rowOddX": 1,
 				"marginX": 3,
-				"marginY": 2,
-				"formationCount": 12
+				"marginY": 3,
 			},
-			"HP": 100,
+			"HP": 100*12,
 			"AP": 3,
-			"attack": 15,
-			"defense": 5,
+			"attack": 24,
+			"defense": 20,
+			"damage": 10,
+			"armor": 1,
 			"onKillXP": 50,
+			"formationCount": 12
 		},
 		
 		"horseman": {
@@ -116,13 +140,15 @@ var Pieces = (function()
 				"rowOddX": 6,
 				"marginX": 1,
 				"marginY": 1,
-				"formationCount": 3
 			},
-			"HP": 100,
+			"HP": 200*3,
 			"AP": 5,
-			"attack": 10,
-			"defense": 0,
+			"attack": 30,
+			"defense": 8,
+			"damage": 20,
+			"armor": 2,
 			"onKillXP": 50,
+			"formationCount": 3,
 		},
 		
 		"undead_spearman": {
@@ -137,14 +163,16 @@ var Pieces = (function()
 				"rowWidth": 4,
 				"rowOddX": 1,
 				"marginX": 4,
-				"marginY": 2,
-				"formationCount": 12
+				"marginY": 3,
 			},
-			"HP": 50,
+			"HP": 50*12,
 			"AP": 2,
-			"attack": 8,
-			"defense": 4,
+			"attack": 18,
+			"defense": 12,
+			"damage": 7,
+			"armor": 0,
 			"onKillXP": 25,
+			"formationCount": 12,
 		},
 	};
 	
@@ -162,6 +190,7 @@ var Pieces = (function()
 			let createGenericSpearman = () => {return Pieces.createPiece("spearman",1)};
 			let createGenericSwordsman = () => {return Pieces.createPiece("swordsman",1)};
 			let createGenericHorseman = () => {return Pieces.createPiece("horseman",1)};
+			let createPikeman = () => {return Pieces.createPiece("pikeman",1)};
 			
 			let createEnemySpearman = () => {return Pieces.createPiece("undead_spearman",2)};
 			
@@ -204,6 +233,9 @@ var Pieces = (function()
 			
 			Game.createNewIDObject("pieces", createGenericSpearman);
 			Pieces.movePieceById(1016, Board.calculateIndexFromCartesian(0,0));
+			
+			Game.createNewIDObject("pieces", createPikeman);
+			Pieces.movePieceById(1017, Board.calculateIndexFromCartesian(0,1));
 			
 			
 			Pieces.abilityMovePiece(1002, Board.calculateIndexFromCartesian(3,2));
@@ -326,6 +358,24 @@ var Pieces = (function()
 			return defense;
 		},
 		
+		getPieceAttackDamageByID: function(pieceID)
+		{
+			let baseDamage = Pieces.getPieceTypePropertyByID(pieceID, "damage");
+			
+			let damage = baseDamage;
+			
+			return damage;
+		},
+		
+		getPieceArmorByID: function(pieceID)
+		{
+			let baseArmor = Pieces.getPieceTypePropertyByID(pieceID, "armor");
+			
+			let armor = baseArmor;
+			
+			return armor;
+		},
+		
 		getPieceHPByID: function(pieceID)
 		{
 			return Game.getIDObjectProperty("pieces", pieceID, "HP");
@@ -397,6 +447,15 @@ var Pieces = (function()
 		{
 			let piece = Pieces.getPiece(pieceID);
 			return piece?.isDead;
+		},
+		
+		getPieceSoldierCountByID: function(pieceID)
+		{
+			let HPRatio = Pieces.getPieceHPByID(pieceID) / Pieces.getPieceMaxHPByID(pieceID);
+			let spriteCount = Pieces.getPieceTypePropertyByID(pieceID, "formationCount") * HPRatio;
+			// a half dead person is still alive.
+			spriteCount = Math.ceil(spriteCount);
+			return spriteCount;
 		},
 		
 		/*
@@ -537,14 +596,27 @@ var Pieces = (function()
 		
 		attackPiece: function(attackerID, defenderID)
 		{
+			let soldierCount = Pieces.getPieceSoldierCountByID(attackerID);
+			
 			// get attack and defense
 			let attack = Pieces.getPieceAttackByID(attackerID);
-			
 			let defense = Pieces.getPieceDefenseByID(defenderID);
-			
-			let damage = attack - defense; 
-			// don't worry, negative values are handled already.
-			Pieces.damagePiece(defenderID, damage, attackerID);
+			let weaponDamage = Pieces.getPieceAttackDamageByID(attackerID);
+			let armor = Pieces.getPieceArmorByID(defenderID);
+
+			for(var soldierIndex = 0; soldierIndex < soldierCount; soldierIndex++)
+			{
+				let diceRoll = randomInteger(0,99);
+				let hitchance = BASE_HIT_CHANCE_PERCENT + attack - defense;
+				
+				if(diceRoll < hitchance)
+				{
+					
+					let damage = weaponDamage - armor; 
+					// don't worry, negative values are handled already.
+					Pieces.damagePiece(defenderID, damage, attackerID);
+				}
+			}
 			
 			// add some XP for the attack itself.
 			// add some XP for the defender as well.
@@ -692,9 +764,54 @@ var Pieces = (function()
 			GUI.updateEffects();
 		},
 		
+		/*
+			Spawning
+		 */
+		
+		// spawn randomly on the left
+		spawnAlly: function()
+		{
+			// find unoccupied tile location 
+			var mapWidth = Board.getMapWidth();
+			var mapHeight = Board.getMapHeight();
+			
+			// naive, if we don't find a tile on first path, then do nothing.
+			let x = 0;
+			let y = randomInteger(0, mapHeight - 1);
+			
+			let index = Board.calculateIndexFromCartesian(x,y);
+			if(Board.isTilePieceOccupiedIndex(index)) return;
+			
+			let createAlly = () => 
+				{
+					return Pieces.createPiece("pikeman",1)
+				};
+			Game.createNewIDObject("pieces", createAlly);
+			Pieces.movePieceById(Game.getState("ID","pieces"), index);
+		},
+		 
+		// spawn randomly on the right
+		spawnEnemy: function()
+		{
+			// find unoccupied tile location 
+			var mapWidth = Board.getMapWidth();
+			var mapHeight = Board.getMapHeight();
+			
+			// naive, if we don't find a tile on first path, then do nothing.
+			let x = mapWidth - 1;
+			let y = randomInteger(0, mapHeight - 1);
+			
+			let index = Board.calculateIndexFromCartesian(x,y);
+			if(Board.isTilePieceOccupiedIndex(index)) return;
+			
+			let createEnemySpearman = () => {return Pieces.createPiece("undead_spearman",2)};
+			Game.createNewIDObject("pieces", createEnemySpearman);
+			Pieces.movePieceById(Game.getState("ID","pieces"), index);
+		},
+		
 		/* 
 			End Turn
-		 */
+		 */	
 		endTurn: function()
 		{
 			// go through every piece which is alive and restore AP.
@@ -732,8 +849,12 @@ var Pieces = (function()
 					let cartesian = Board.calculateCartesianFromIndex(tileIndex);
 					if(!leftmostTile || leftmostTile?.x > cartesian.x)
 					{
-						leftmostTile = cartesian;
-						leftmostIndex = tileIndex;
+						// TEMP: condition for testing
+						if(cartesian.x > 0)
+						{
+							leftmostTile = cartesian;
+							leftmostIndex = tileIndex;
+						}
 					}
 				}
 				// in case there is no valid destination, do nothing.
@@ -754,6 +875,29 @@ var Pieces = (function()
 					}
 				}
 			}
+		},
+		
+		// stress test
+		TestOneHundredTurns: function()
+		{
+			for(index = 0; index < 100; index++)
+			{
+				let diceRoll = Math.random();
+				let spawnChanceOne = 0.05;
+				let spawnChanceTwo = 1.00;
+				
+				if(diceRoll < spawnChanceOne)
+				{
+					Pieces.spawnAlly();
+				}
+				
+				if(diceRoll < spawnChanceTwo)
+				{
+					Pieces.spawnEnemy();
+				}
+				
+				Pieces.AITurn(1);Pieces.AITurn(2);Pieces.endTurn();
+			} 
 		},
 	}
 })();
