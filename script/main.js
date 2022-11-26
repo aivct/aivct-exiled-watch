@@ -1,6 +1,4 @@
-const VERSION = "0.1.0"; 
- 
-// TODO: create teams
+const VERSION = "0.1.5"; 
 // basic init functions
 function initialize()
 {
@@ -11,16 +9,8 @@ function initialize()
 	Game.newGame();
 	GUI.updateAll();
 	
-	window.requestAnimationFrame(draw);
+	window.requestAnimationFrame(GUI.draw);
 }
-
-
-function draw()
-{
-	GUI.draw();
-	window.requestAnimationFrame(draw);
-}
-
 /*
 	Loads images, and that's about it.
 	Oh, and provides a nice progress summary. Eventually. We'll get around to it.
@@ -184,12 +174,16 @@ var Assets = (function()
  */
 var GUI = (function()
 {
+	const DEFAULT_PARTICLE_LIFESPAN = 2000;
+	
 	var GUIContainer;
 	
 	var mapLayer;
 	var unitsLayer;
 	var effectsLayer;
-	// var UILayer;
+	var UILayer;
+	
+	// TODO: move effects to UI and add particles + particle combination
 	
 	// TODO: implement resizing
 	var canvasWidth = 800;
@@ -205,10 +199,42 @@ var GUI = (function()
 	var tileOffset;
 	
 	const sizeMultiplier = 1;
-	
 	// TODO: zoom
 	
+	var lastTime;
+	// we don't unify the arrays because we're going to have separate types of particles, ie for money, for gold, etc.
+	var damageTextParticles = [];
+	
 	var mousedownTile = null;
+	
+	// just a data container.
+	function Particle(x, y, data, life = DEFAULT_PARTICLE_LIFESPAN)
+	{
+		this.x = x;
+		this.y = y;
+		this.data = data;
+		this.life = life;
+	}
+	
+	Particle.prototype.draw = function(elapsed)
+	{
+		this.life -= elapsed;
+	}
+	
+	Particle.prototype.isDead = function()
+	{
+		if(this.life < 0) return true;
+		return false;
+	}
+	
+	// merging some text effects
+	Particle.prototype.merge = function(particle)
+	{
+		this.x = (this.x + particle.x) / 2;
+		this.y = (this.y + particle.y) / 2;
+		this.data = this.data + particle.data;
+		this.life = Math.max(this.life, particle.life);
+	}
 	
 	return {
 		initialize: function()
@@ -237,8 +263,8 @@ var GUI = (function()
 			effectsLayer = GUI.createEffectsLayer();
 			GUIContainer.appendChild(effectsLayer.getCanvas());
 			
-			//UILayer = GUI.createUILayer();
-			//GUIContainer.appendChild(UILayer.getCanvas());
+			UILayer = GUI.createUILayer();
+			GUIContainer.appendChild(UILayer.getCanvas());
 			
 			document.body.appendChild(GUIContainer);
 		},
@@ -263,13 +289,14 @@ var GUI = (function()
 		
 		createEffectsLayer: function()
 		{
-			let layer = new CanvasLayer(canvasWidth, canvasHeight, GUI.drawEffects);
+			// set to always draw because this is a layer that draws particles
+			let layer = new CanvasLayer(canvasWidth, canvasHeight, GUI.drawEffects, true); 
 			layer.width = canvasWidth;
 			layer.height = canvasHeight;
 			
 			return layer;
 		},
-		/*
+		
 		createUILayer: function()
 		{
 			let layer = new CanvasLayer(canvasWidth, canvasHeight, GUI.drawUI);
@@ -278,13 +305,22 @@ var GUI = (function()
 			
 			return layer;
 		},
-		 */
-		draw: function()
+		
+		draw: function(timestamp)
 		{
-			mapLayer.draw();
-			unitsLayer.draw();
-			effectsLayer.draw();
-			//UILayer.draw();
+			if(!lastTime)
+			{
+				lastTime = timestamp;
+			}
+			let elapsed = timestamp - lastTime;
+			
+			mapLayer.draw(elapsed);
+			unitsLayer.draw(elapsed);
+			effectsLayer.draw(elapsed);
+			UILayer.draw(elapsed);
+			
+			lastTime = timestamp;
+			window.requestAnimationFrame(GUI.draw);
 		},
 		
 		drawMap: function(context, canvas)
@@ -414,7 +450,109 @@ var GUI = (function()
 			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize + 4, tileSize * HPBarRatio, 2);
 		},
 		
-		drawEffects: function(context, canvas)
+		drawEffects: function(context, canvas, lapse)
+		{
+			context.clearRect(0,0,canvas.width,canvas.height);
+			
+			// TODO: change this because it's a bloody mess
+			// draw damage particles.
+			// plus, get bigger with more damage
+			context.fillStyle = "red";
+			for(let index = 0; index < damageTextParticles.length; index++)
+			{
+				let particle = damageTextParticles[index];
+				// particle.draw() isn't actually drawing, only calculating
+				particle.draw(lapse);
+				// now change x and y 
+				particle.x += 0;
+				particle.y += -(lapse/50);
+				let sizeMultiplier = Math.max(Math.min(Math.sqrt(particle.data) / 5,2),1);
+				let particleFontSize = Math.round(sizeMultiplier * 12);
+				let font = `${particleFontSize}px ${fontFamily}`;
+				if(context.font !== font) context.font = font;
+				
+				let text = `${particle.data}`;
+				// draw
+				context.fillText(text, particle.x, Math.floor(particle.y));
+			}
+			// remove dead particles
+			if(damageTextParticles.length > 0)
+			{
+				damageTextParticles = damageTextParticles.filter( (particle) => { return !particle.isDead() } );
+			}
+		},
+		
+		drawHighlightedTile: function(context, tilePosition)
+		{
+			let positionCartesian = Board.calculateCartesianFromIndex(tilePosition);
+			let canvasPosition = GUI.cartesianToCanvas(positionCartesian.x, positionCartesian.y);
+			
+			context.beginPath();
+			context.rect(canvasPosition.x, canvasPosition.y,tileSize,tileSize);
+			context.stroke();
+		},
+		
+		addParticleAbovePiece: function(type, data, pieceID)
+		{
+			let piecePosition = Pieces.getPiecePositionByID(pieceID);
+			if(!piecePosition && piecePosition !== 0)
+			{
+				console.warn(`GUI.addParticleAbovePiece: cannot find position for pieceID ${pieceID}.`);
+				// guard statement for invalid pieceID
+				return;
+			}
+			
+			let positionCartesian = Board.calculateCartesianFromIndex(piecePosition);
+			let canvasPosition = GUI.cartesianToCanvas(positionCartesian.x, positionCartesian.y);
+			
+			let x = canvasPosition.x + tileSize/2 + randomInteger(-2, 2);
+			let y = canvasPosition.y + tileSize/2;
+			let particle = new Particle(x, y, data);
+			
+			if(type === "damage")
+			{
+				// if we can get a closer effect, then merge into it.
+				let closeParticle = GUI.findParticleWithinLength(type, particle, 5);
+				
+				if(!closeParticle)
+				{
+					damageTextParticles.push(particle);
+				}
+				else 
+				{
+					closeParticle.merge(particle);
+				}
+			}
+			
+			return particle;
+		},
+		
+		// gets a random particle within length FIFO
+		findParticleWithinLength: function(type, comparedParticle, length = 5)
+		{
+			var array;
+			if(type === "damage")
+			{
+				array = damageTextParticles;
+			}
+			if(!array) return;
+			
+			for(let index = 0; index < array.length; index++)
+			{
+				let particle = array[index];
+				
+				let dx = comparedParticle.x - particle.x;
+				let dy = comparedParticle.y - particle.y;
+				
+				let distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+				
+				if(distance < length) return particle;
+			}
+			return;
+		},
+		
+		// not the big UI, but in game UI (ie highlighting selected and valid tiles)
+		drawUI: function(context, canvas)
 		{
 			context.clearRect(0,0,canvas.width,canvas.height);
 			
@@ -456,21 +594,6 @@ var GUI = (function()
 					}
 				}
 			}
-		},
-		
-		drawHighlightedTile: function(context, tilePosition)
-		{
-			let positionCartesian = Board.calculateCartesianFromIndex(tilePosition);
-			let canvasPosition = GUI.cartesianToCanvas(positionCartesian.x, positionCartesian.y);
-			
-			context.beginPath();
-			context.rect(canvasPosition.x, canvasPosition.y,tileSize,tileSize);
-			context.stroke();
-		},
-		
-		drawUI: function(context, canvas)
-		{
-			
 		},
 		
 		/* DEBUG */
@@ -524,7 +647,7 @@ var GUI = (function()
 		
 		updateUI: function()
 		{
-			//UILayer.update();
+			UILayer.update();
 		},
 		
 		updateAll: function()
@@ -532,7 +655,7 @@ var GUI = (function()
 			mapLayer.update();
 			unitsLayer.update();
 			effectsLayer.update();
-			//UILayer.update();
+			UILayer.update();
 		},
 		
 		handlePointerdown: function(event)
@@ -637,8 +760,12 @@ var GUI = (function()
 	@param width - canvas width
 	@param height - canvas height
 	@param onpaint - function(context, canvas) triggered on draw
+	@param alwaysNeedsUpdate - if a layer is always updating. 
+		Even if a layer is 'basically' always updating, setting this to false and just constantly updating is fine. 
+		This is more for particle and effects drawing where .draw() is actually involved in making user-end calculations 
+			(like for particle position)
  */
-function CanvasLayer(width = 800, height = 600, onpaint)
+function CanvasLayer(width = 800, height = 600, onpaint, alwaysNeedsUpdate = false)
 {
 	this.canvas = document.createElement("CANVAS");
 	this.canvas.width = 800;
@@ -652,15 +779,16 @@ function CanvasLayer(width = 800, height = 600, onpaint)
 	this.context.msImageSmoothingEnabled = false;
 	this.context.imageSmoothingEnabled = false;
 	
+	this.alwaysNeedsUpdate = alwaysNeedsUpdate;
 	this.needsUpdate = true;
 	this.onpaint = onpaint;
 }
 
-CanvasLayer.prototype.draw = function()
+CanvasLayer.prototype.draw = function(lapse)
 {
-	if(!this.needsUpdate) return false;
+	if(!this.needsUpdate && !this.alwaysNeedsUpdate) return false;
 	
-	if(this.onpaint) this.onpaint(this.context, this.canvas);
+	if(this.onpaint) this.onpaint(this.context, this.canvas, lapse);
 	
 	this.needsUpdate = false;
 	return true;

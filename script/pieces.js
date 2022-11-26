@@ -620,6 +620,8 @@ var Pieces = (function()
 					let damage = weaponDamage - armor; 
 					// don't worry, negative values are handled already.
 					Pieces.damagePiece(defenderID, damage, attackerID);
+					// add particle effect
+					GUI.addParticleAbovePiece("damage", damage, defenderID);
 				}
 			}
 			
@@ -760,13 +762,13 @@ var Pieces = (function()
 			// cannot select dead pieces 
 			if(Pieces.isPieceDeadByID(pieceID)) return;
 			currentSelectedPiece = pieceID;
-			GUI.updateEffects();
+			GUI.updateUI();
 		},
 		
 		deselectPiece: function()
 		{
 			currentSelectedPiece = null;
-			GUI.updateEffects();
+			GUI.updateUI();
 		},
 		
 		/*
@@ -831,7 +833,7 @@ var Pieces = (function()
 			
 			// set update flag because of a significant change
 			GUI.updateUnits();
-			GUI.updateEffects();
+			GUI.updateUI();
 		},
 		
 		// TODO: perhaps we shall factor AI as its own thing someday.

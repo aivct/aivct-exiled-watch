@@ -1,3 +1,6 @@
+0.1.5
+-unremoved UILayer, moved highlighting from effects to UI.
+-added particles for damage!
 0.1.4
 -changed number of levels from 5 to 10.
 -fixed a melee range bug. AGAIN.
