@@ -189,7 +189,7 @@ var GUI = (function()
 	var mapLayer;
 	var unitsLayer;
 	var effectsLayer;
-	var UILayer;
+	// var UILayer;
 	
 	// TODO: implement resizing
 	var canvasWidth = 800;
@@ -204,6 +204,10 @@ var GUI = (function()
 	var tileSize;
 	var tileOffset;
 	
+	const sizeMultiplier = 1;
+	
+	// TODO: zoom
+	
 	var mousedownTile = null;
 	
 	return {
@@ -211,7 +215,7 @@ var GUI = (function()
 		{
 			offsetX = 112;
 			offsetY = 112;
-			tileSize = 32;
+			tileSize = 32 * sizeMultiplier;
 			tileOffset = 5;
 			GUI.createGUI();
 		},
@@ -233,8 +237,8 @@ var GUI = (function()
 			effectsLayer = GUI.createEffectsLayer();
 			GUIContainer.appendChild(effectsLayer.getCanvas());
 			
-			UILayer = GUI.createUILayer();
-			GUIContainer.appendChild(UILayer.getCanvas());
+			//UILayer = GUI.createUILayer();
+			//GUIContainer.appendChild(UILayer.getCanvas());
 			
 			document.body.appendChild(GUIContainer);
 		},
@@ -265,7 +269,7 @@ var GUI = (function()
 			
 			return layer;
 		},
-		
+		/*
 		createUILayer: function()
 		{
 			let layer = new CanvasLayer(canvasWidth, canvasHeight, GUI.drawUI);
@@ -274,13 +278,13 @@ var GUI = (function()
 			
 			return layer;
 		},
-		
+		 */
 		draw: function()
 		{
 			mapLayer.draw();
 			unitsLayer.draw();
 			effectsLayer.draw();
-			UILayer.draw();
+			//UILayer.draw();
 		},
 		
 		drawMap: function(context, canvas)
@@ -370,8 +374,10 @@ var GUI = (function()
 				if(rowCount === 3) context.globalAlpha = 0.33;
 				
 				sprite.draw(context
-					, canvasPosition.x + tileSize - marginX - width * (index % rowWidth) - sprite.getWidth() - ((rowCount % 2) * rowOddX)
-					, canvasPosition.y + tileSize - marginY - height * (rowCount) - sprite.getHeight());
+					, canvasPosition.x + tileSize - marginX - width * (index % rowWidth) * sizeMultiplier - (sprite.getWidth() * sizeMultiplier) - ((rowCount % 2) * rowOddX * sizeMultiplier)
+					, canvasPosition.y + tileSize - marginY - height * (rowCount) * sizeMultiplier - (sprite.getHeight() * sizeMultiplier)
+					, (sprite.getWidth() * sizeMultiplier)
+					, (sprite.getHeight() * sizeMultiplier) );
 			}
 			
 			// XP indicator
@@ -382,8 +388,10 @@ var GUI = (function()
 				if(rankSprite)
 				{
 					rankSprite.draw(context
-						, canvasPosition.x + tileSize - rankSprite.getWidth()
-						, canvasPosition.y);
+						, canvasPosition.x + tileSize - (rankSprite.getWidth() * sizeMultiplier)
+						, canvasPosition.y
+						, (rankSprite.getWidth() * sizeMultiplier)
+						, (rankSprite.getHeight() * sizeMultiplier) );
 				}
 			}
 			
@@ -516,7 +524,7 @@ var GUI = (function()
 		
 		updateUI: function()
 		{
-			UILayer.update();
+			//UILayer.update();
 		},
 		
 		updateAll: function()
@@ -524,7 +532,7 @@ var GUI = (function()
 			mapLayer.update();
 			unitsLayer.update();
 			effectsLayer.update();
-			UILayer.update();
+			//UILayer.update();
 		},
 		
 		handlePointerdown: function(event)
@@ -807,3 +815,8 @@ function SpriteCompositeLayer(sprite, x, y, width, height)
 	this.widthRatio = width;
 	this.heightRatio = height;
 }
+
+/**
+	Since there is no easy way to recolor sprites in JS,
+	a recolored sprite literally takes 
+ */

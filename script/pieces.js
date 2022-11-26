@@ -40,9 +40,9 @@
 		
 		Unify pieces, AP, and abilities.
 			getAPCost for ability X
-			
+		
 		Separate AP into movement points and AP
-				
+		
 		Overhaul AP costs.
 			Ie, a horseman with 5 attacks per turn is too OP,
 				and even 3 attacks is stretching it.
@@ -419,11 +419,16 @@ var Pieces = (function()
 			// TODO: factor this out into its own function calculateLevelFromXP
 			let level = 0;
 			// naive, but hey, it works.
+			if(XP >  50) {XP -=  50; level++;}
 			if(XP > 100) {XP -= 100; level++;}
 			if(XP > 150) {XP -= 150; level++;}
 			if(XP > 200) {XP -= 200; level++;}
 			if(XP > 250) {XP -= 250; level++;}
 			if(XP > 300) {XP -= 300; level++;}
+			if(XP > 350) {XP -= 350; level++;}
+			if(XP > 400) {XP -= 400; level++;}
+			if(XP > 450) {XP -= 450; level++;}
+			if(XP > 500) {XP -= 500; level++;}
 			
 			return level;
 		},
@@ -732,7 +737,7 @@ var Pieces = (function()
 			let defenderPosition = Pieces.getPiecePositionByID(defenderID);
 			
 			// if not neighbours, we cannot reach in melee
-			if(!Board.isTileNeighbourByIndex(attackerPosition, defenderPosition));
+			if(!Board.isTileNeighbourByIndex(attackerPosition, defenderPosition)) return;
 			
 			let AP = Pieces.getPieceAPByID(attackerID);
 			let APCost = 1;
@@ -784,7 +789,8 @@ var Pieces = (function()
 			
 			let createAlly = () => 
 				{
-					return Pieces.createPiece("pikeman",1)
+					let types = ["spearman","pikeman","swordsman","horseman"];
+					return Pieces.createPiece(randomElementInArray(types),1)
 				};
 			Game.createNewIDObject("pieces", createAlly);
 			Pieces.movePieceById(Game.getState("ID","pieces"), index);
@@ -883,8 +889,8 @@ var Pieces = (function()
 			for(index = 0; index < 100; index++)
 			{
 				let diceRoll = Math.random();
-				let spawnChanceOne = 0.05;
-				let spawnChanceTwo = 1.00;
+				let spawnChanceOne = 0.10;
+				let spawnChanceTwo = 0.60;
 				
 				if(diceRoll < spawnChanceOne)
 				{
