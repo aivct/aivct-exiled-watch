@@ -15,6 +15,9 @@ var GUI = (function()
 	const TILE_MARGIN = 5;
 	
 	var GUIContainer;
+	var unitBuyerElement;
+	var abilityToolbarElement;
+	var tooltipElement;
 	
 	var mapLayer;
 	var unitsLayer;
@@ -90,9 +93,10 @@ var GUI = (function()
 		createGUI: function()
 		{
 			GUIContainer = document.createElement("div");
-			GUIContainer.addEventListener("pointerdown",GUI.handlePointerdown, false);
-			GUIContainer.addEventListener("pointerup",GUI.handlePointerup, false);
-			GUIContainer.addEventListener("pointermove",GUI.handlePointermove, false);
+			GUIContainer.classList.add("gui-container");
+			document.body.addEventListener("pointerdown",GUI.handlePointerdown, false);
+			document.body.addEventListener("pointerup",GUI.handlePointerup, false);
+			document.body.addEventListener("pointermove",GUI.handlePointermove, false);
 			document.body.addEventListener("keydown",GUI.handleKeydown, false);
 			document.body.addEventListener("keyup",GUI.handleKeyup, false);
 			GUIContainer.style.position = "relative";
@@ -108,6 +112,10 @@ var GUI = (function()
 			
 			UILayer = GUI.createUILayer();
 			GUIContainer.appendChild(UILayer.getCanvas());
+			
+			// DOM elements 
+			unitBuyerElement = GUI.createUnitBuyerElement();
+			GUIContainer.appendChild(unitBuyerElement);
 			
 			document.body.appendChild(GUIContainer);
 		},
@@ -147,6 +155,71 @@ var GUI = (function()
 			layer.height = canvasHeight;
 			
 			return layer;
+		},
+		
+		createUnitBuyerElement: function()
+		{
+			let element = document.createElement("div");
+			element.style.position = "absolute";
+			element.style.top = "50px";
+			element.style.left = "0";
+			
+			let header = document.createElement("h1");
+			let textNode = document.createTextNode("UNITS");
+			header.appendChild(textNode);
+			element.appendChild(header);
+			
+			element.classList.add("gui-element");
+			// add units within it.
+			var buyablePieces = Pieces.getBuyablePieces();
+			for(var index = 0; index < buyablePieces.length; index++)
+			{
+				var type = buyablePieces[index];
+				let buyUnitButton = GUI.createUnitBuyerButtonElement(type);
+				element.appendChild(buyUnitButton);
+			}
+			
+			return element;
+		},
+		
+		createUnitBuyerButtonElement: function(type)
+		{
+			let element = document.createElement("div");
+			element.classList.add("gui-square-button");
+			element.onclick = () => { Pieces.setSelectedBuyPiece(type.typeName) };
+			
+			let icon = document.createElement("canvas");
+			icon.width = tileSize;
+			icon.height = tileSize;
+			let iconContext = icon.getContext("2d");
+			iconContext.webkitImageSmoothingEnabled = false;
+			iconContext.msImageSmoothingEnabled = false;
+			iconContext.imageSmoothingEnabled = false;
+			
+			let imageName = type.image;
+			let image = Assets.getImage(imageName);
+			if(!image)
+			{
+				console.warn(`GUI.createUnitBuyerButtonElement: no image of ${imageName} found.`);
+				return;
+			}
+			let width = image.getWidth() * 1;
+			let height = image.getHeight() * 1;
+			image.draw(iconContext, Math.floor(icon.width/2-width/2),icon.height - height, width, height);
+			
+			element.appendChild(icon);
+			
+			return element;
+		},
+		
+		createAbilityToolbarElement: function()
+		{
+			
+		},
+		
+		createTooltipElement: function()
+		{
+			
 		},
 		
 		draw: function(timestamp)
@@ -425,7 +498,20 @@ var GUI = (function()
 			let font = `${fontSize}px ${fontFamily}`;
 			if(context.font !== font) context.font = font;
 			
+			let buyablePieceID = Pieces.getSelectedBuyPiece();
 			let selectedPieceID = Pieces.getSelectedPiece();
+			if(buyablePieceID)
+			{
+				// TODO: change the hardcoded assumption that 1 is the player team
+				let highlightedTiles = Pieces.getValidSpawnPositions(1);
+				for(var index = 0; index < highlightedTiles.length; index++)
+				{
+					let tilePosition = highlightedTiles[index];
+					context.strokeStyle = "yellow";
+					context.lineWidth = 2;
+					GUI.drawHighlightedTile(context, tilePosition);
+				}
+			}
 			if(selectedPieceID)
 			{
 				let selectedPieceAP = Pieces.getPieceAPByID(selectedPieceID);
@@ -590,45 +676,64 @@ var GUI = (function()
 			if(!Board.isValidCartesian(positionCartesian.x, positionCartesian.y)) return;
 			let positionIndex = Board.calculateIndexFromCartesian(positionCartesian.x, positionCartesian.y);
 			
-			// TODO: fix this mess of a click handler...
 			// mousedown/mouseup is what constitutes a click.
 			if(mousedownTile === positionIndex && mousedownTile !== null)
 			{
-				// TODO:this need to be factored somewhere else
-				// see if we selected a piece
-				let selectedPieceID = Pieces.getSelectedPiece();
-				let pieceID = Board.getTilePieceOccupiedIndex(positionIndex);
-				if(selectedPieceID)
-				{
-					if(pieceID)
-					{
-						// assume it's attack
-						Pieces.abilityMeleeAttackPiece(selectedPieceID, pieceID);
-						
-						// deselect at the end of day
-						Pieces.deselectPiece();
-					}
-					else 
-					{
-						// else, assume it's movement
-						Pieces.abilityMovePiece(selectedPieceID, positionIndex);
-						// deselect at the end of day
-						Pieces.deselectPiece();
-					}
-				}
-				else 
-				{
-					// assume we're selecting 
-					if(pieceID)
-					{
-						Pieces.selectPiece(pieceID);
-					}
-				}
+				GUI.onTileClick(positionIndex);
 			}
 			else 
 			{
 				mousedownTile = null;
 				Pieces.deselectPiece();
+			}
+		},
+		
+		onTileClick: function(positionIndex)
+		{
+			// see if we selected a piece
+			let buyPieceName = Pieces.getSelectedBuyPiece();
+			let selectedPieceID = Pieces.getSelectedPiece();
+			let pieceID = Board.getTilePieceOccupiedIndex(positionIndex);
+			
+			if(buyPieceName)
+			{				
+				// TODO: change hardcoded team assumption 
+				// see if tile is valid 
+				let validSpawnLocations = Pieces.getValidSpawnPositions(1);
+				if(validSpawnLocations.indexOf(positionIndex) > -1)
+				{
+					Pieces.buyAndSpawnPiece(buyPieceName, positionIndex);
+				}
+				
+				// deselect when we're done
+				Pieces.deselectBuyPiece();
+			}
+			
+			if(selectedPieceID)
+			{
+				if(pieceID)
+				{
+					// assume it's attack
+					Pieces.abilityMeleeAttackPiece(selectedPieceID, pieceID);
+					
+					// deselect at the end of day
+					Pieces.deselectPiece();
+				}
+				else 
+				{
+					// else, assume it's movement
+					Pieces.abilityMovePiece(selectedPieceID, positionIndex);
+					// deselect at the end of day
+					Pieces.deselectPiece();
+				}
+			}
+			else 
+			{
+				// assume we're selecting 
+				if(pieceID)
+				{
+					Pieces.selectPiece(pieceID);
+				}
 			}
 		},
 		

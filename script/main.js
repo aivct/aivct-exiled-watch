@@ -1,4 +1,4 @@
-const VERSION = "0.1.6"; 
+const VERSION = "0.1.7"; 
 // basic init functions
 function initialize()
 {
@@ -367,5 +367,5 @@ function SpriteCompositeLayer(sprite, x, y, width, height)
 
 /**
 	Since there is no easy way to recolor sprites in JS,
-	a recolored sprite literally takes 
+	a recolored sprite literally takes an entire canvas.
  */

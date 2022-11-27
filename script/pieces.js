@@ -34,7 +34,7 @@
 		// undeploy every unit for when that is needed.
 		Pieces.undeployAll();
 		
-		Factor out the GUI interface.
+		Factor out the GUI API.
 		
 		Overhaul levels to account for promotions (0.2.x);
 		
@@ -46,6 +46,8 @@
 		Overhaul AP costs.
 			Ie, a horseman with 5 attacks per turn is too OP,
 				and even 3 attacks is stretching it.
+				
+		buyPiece()
  */
 var Pieces = (function()
 {
@@ -56,6 +58,7 @@ var Pieces = (function()
 	var piecesStatistics = 
 	{
 		"spearman": {
+			"typeName": "spearman",
 			"name": "Spearman",
 			"image": "spearman",
 			"drawSettings": 
@@ -77,9 +80,14 @@ var Pieces = (function()
 			"armor": 0,
 			"onKillXP": 50,
 			"formationCount": 12,
+			
+			"buyable": true,
+			"buyablePriceGold": 50,
+			"buyablePriceManpower": 12,
 		},
 		
 		"pikeman": {
+			"typeName": "pikeman",
 			"name": "Pikeman",
 			"image": "pikeman",
 			"drawSettings": 
@@ -99,11 +107,12 @@ var Pieces = (function()
 			"defense": 25,
 			"damage": 10,
 			"armor": 4,
-			"onKillXP": 75,
+			"onKillXP": 100,
 			"formationCount": 12,
 		},
 		
 		"swordsman": {
+			"typeName": "swordsman",
 			"name": "Swordsman",
 			"image": "swordsman",
 			"drawSettings": 
@@ -124,10 +133,15 @@ var Pieces = (function()
 			"damage": 10,
 			"armor": 1,
 			"onKillXP": 50,
-			"formationCount": 12
+			"formationCount": 12,
+			
+			"buyable": true,
+			"buyablePriceGold": 75,
+			"buyablePriceManpower": 12,
 		},
 		
 		"horseman": {
+			"typeName": "horseman",
 			"name": "Horseman",
 			"image": "horseman",
 			"drawSettings": 
@@ -145,13 +159,18 @@ var Pieces = (function()
 			"AP": 5,
 			"attack": 30,
 			"defense": 8,
-			"damage": 20,
+			"damage": 15,
 			"armor": 2,
 			"onKillXP": 50,
 			"formationCount": 3,
+			
+			"buyable": true,
+			"buyablePriceGold": 100,
+			"buyablePriceManpower": 3,
 		},
 		
 		"undead_spearman": {
+			"typeName": "undead_spearman",
 			"name": "Undead Spearman",
 			"image": "undead_spearman",
 			"drawSettings": 
@@ -178,6 +197,7 @@ var Pieces = (function()
 	
 	// fields
 	var currentSelectedPiece = null;
+	var buyableSelectedPiece = null;
 	
 	return {
 		initialize: function()
@@ -489,6 +509,24 @@ var Pieces = (function()
 			return type[propertyName];
 		},
 		
+		getBuyablePieces: function()
+		{
+			let buyablePieces = [];
+			
+			let type;
+			for(let typeName in piecesStatistics)
+			{
+				type = piecesStatistics[typeName];
+				
+				if(type.buyable)
+				{
+					buyablePieces.push(type);
+				}
+			}
+			
+			return buyablePieces;
+		},
+		
 		movePieceById: function(pieceID, newPosition)
 		{
 			// check if new position is occupied
@@ -697,6 +735,35 @@ var Pieces = (function()
 			return validTargetsID;
 		},
 		
+		getValidSpawnPositions: function(team = 1)
+		{
+			let validPositions = [];
+			
+			let x = 0;
+			if(team === 1)
+			{
+				x = 0;
+			}
+			else if(team === 2)
+			{
+				x = Board.getMapWidth() - 1;
+			}
+			let minY = 0;
+			let maxY = Board.getMapHeight() - 1;
+			
+			for(let y = 0; y <= maxY; y++)
+			{
+				let tileIndex = Board.calculateIndexFromCartesian(x,y);
+				
+				if(!Board.isTilePieceOccupiedIndex(tileIndex))
+				{
+					validPositions.push(tileIndex);
+				}
+			}
+			
+			return validPositions;
+		},
+		
 		/*
 			Ability functions require APs,
 			Interfaces with GUI.
@@ -749,6 +816,30 @@ var Pieces = (function()
 			Pieces.attackPiece(attackerID, defenderID);
 		},
 		
+		/* Buying */
+		buyAndSpawnPiece: function(typeName, position)
+		{
+			// first, see if tilePosition is valid. it pays to be paranoid, especially since this is UI facing.
+			if(!Board.isTileValidDestinationByIndex(position))
+			{
+				console.warn(`Pieces.buyAndSpawnPiece: position "${position}" already occupied!`);
+				return;
+			}
+			// double check that typeName exists 
+			if(!piecesStatistics[typeName]) 
+			{
+				console.warn(`Pieces.buyAndSpawnPiece: typeName "${typeName}" not found.`);
+				return;
+			}
+			// check and deduct money here.
+			
+			// now, create and spawn.
+			let createPiece = () => { return Pieces.createPiece(typeName,1) };
+			
+			Game.createNewIDObject("pieces", createPiece);
+			Pieces.movePieceById(Game.getState("ID","pieces"), position);
+		},
+		
 		/*
 			GUI and UI related
 		 */
@@ -762,12 +853,31 @@ var Pieces = (function()
 			// cannot select dead pieces 
 			if(Pieces.isPieceDeadByID(pieceID)) return;
 			currentSelectedPiece = pieceID;
+			Pieces.deselectBuyPiece(); // we can't select both at once.
 			GUI.updateUI();
 		},
 		
 		deselectPiece: function()
 		{
 			currentSelectedPiece = null;
+			GUI.updateUI();
+		},
+		
+		getSelectedBuyPiece: function()
+		{
+			return buyableSelectedPiece;
+		},
+		
+		setSelectedBuyPiece: function(name)
+		{
+			buyableSelectedPiece = name;
+			Pieces.deselectPiece(); // we can't select both at once.
+			GUI.updateUI();
+		},
+		
+		deselectBuyPiece: function()
+		{
+			buyableSelectedPiece = null;
 			GUI.updateUI();
 		},
 		
