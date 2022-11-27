@@ -1,3 +1,9 @@
+0.1.6
+-added setting for particlesEnabled
+-updated font to be less bad at lowercase. 
+-added keydown and keyup
+	-added ability to pan/scroll the main board via keys
+-factored out GUI.js to its own file
 0.1.5
 -unremoved UILayer, moved highlighting from effects to UI.
 -added particles for damage!

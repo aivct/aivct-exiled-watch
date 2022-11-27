@@ -24,6 +24,8 @@ var Game = (function()
 			state["system"] = {};
 			state["system"].version = VERSION;
 			state["map"] = {};
+			state["settings"] = {};
+			state["settings"].particlesEnabled = true;
 			
 			// id'ed objects
 			state["pieces"] = [];
