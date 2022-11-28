@@ -27,6 +27,9 @@ var Game = (function()
 			state["settings"] = {};
 			state["settings"].particlesEnabled = true;
 			
+			state["metrics"] = {};
+			Metrics.initialize();
+			
 			// id'ed objects
 			state["pieces"] = [];
 			state["ID"] = {}; // list of lastIDs
@@ -218,4 +221,38 @@ var Game = (function()
 			return true;
 		},
 	};
+})();
+
+var Metrics = (function()
+{
+	return {
+		initialize: function()
+		{
+			Game.setState("metrics","formations_lost",0);
+			Game.setState("metrics","formations_killed",0);
+			Game.setState("metrics","damage_dealt",0);
+			Game.setState("metrics","damage_received",0);
+			Game.setState("metrics","health_healed",0);
+			Game.setState("metrics","gold_spent",0);
+			Game.setState("metrics","xp_earned",0);
+			Game.setState("metrics","turns_played",0);
+		},
+		
+		addMetric: function(name, value)
+		{
+			let previousValue = Game.getState("metrics",name);
+			if(!Game.getState("metrics",name) && Game.getState("metrics",name) !== 0)
+			{
+				console.warn(`Metrics.addMetric: metric "${name}" returned "${previousValue}". Resetting to 0.`);
+				Game.setState("metrics",name,0);
+			}
+			// TODO: add foolproofing
+			return Game.addState("metrics",name,value);
+		},
+		
+		getMetrics: function()
+		{
+			return Game.getState("metrics");
+		},
+	}
 })();

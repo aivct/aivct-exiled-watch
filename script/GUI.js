@@ -211,7 +211,7 @@ var GUI = (function()
 			
 			return element;
 		},
-		
+		//TODO: hide and update
 		createAbilityToolbarElement: function()
 		{
 			

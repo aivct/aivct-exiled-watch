@@ -47,7 +47,11 @@
 			Ie, a horseman with 5 attacks per turn is too OP,
 				and even 3 attacks is stretching it.
 				
-		buyPiece()
+		High contrast colour scheme for units...
+		
+		Change HP to FGII system: Total/Wounded/Dead.
+		
+		Add STATISTICS! Easy Job.
  */
 var Pieces = (function()
 {
@@ -568,6 +572,11 @@ var Pieces = (function()
 			
 			// set update flag because of a significant change
 			GUI.updateUnits();
+			
+			let pieceTeam = Pieces.getPieceTeamByID(pieceID);
+			if(pieceTeam === 1) Metrics.addMetric("damage_received", damageAmount);
+			let sourceTeam = Pieces.getPieceTeamByID(sourceID);
+			if(sourceTeam === 1) Metrics.addMetric("damage_dealt", damageAmount);
 		},
 		
 		healPiece: function(pieceID, healAmount)
@@ -590,12 +599,17 @@ var Pieces = (function()
 			
 			// set update flag because of a significant change
 			GUI.updateUnits();
+			
+			let pieceTeam = Game.getPieceTeamByID(pieceID);
+			if(pieceTeam === 1) Metrics.addMetric("health_healed", healAmount);
 		},
 		
 		killPiece: function(pieceID, sourceID)
 		{
 			// housekeeping
 			Game.setIDObjectProperty("pieces",pieceID,"isDead",true);
+			let pieceTeam = Pieces.getPieceTeamByID(pieceID);
+			if(pieceTeam === 1) Metrics.addMetric("formations_lost", 1);
 			// free its position
 			let position = Pieces.getPiecePositionByID(pieceID);
 			Board.setTilePieceOccupiedIndex(position, null);
@@ -605,7 +619,11 @@ var Pieces = (function()
 			if(sourceID) 
 			{
 				Pieces.addXP(sourceID, onKillXP);
+				// TODO: factor out stats into its own Pieces.addPieceMetric function
 				Game.changeIDObjectProperty("pieces", sourceID, "kills", 1);
+				
+				let sourceTeam = Pieces.getPieceTeamByID(sourceID);
+				if(sourceTeam === 1) Metrics.addMetric("formations_killed", 1);
 			}
 			// set update flag because of a significant change
 			GUI.updateUnits();
@@ -626,12 +644,16 @@ var Pieces = (function()
 			
 			// set update flag because of a significant change
 			GUI.updateUnits();
+			// register metrics
+			let team = Pieces.getPieceTeamByID(pieceID);
+			if(team === 1) Metrics.addMetric("xp_earned", value);
 		},
 		
 		fullHealPiece: function(pieceID)
 		{
 			let maxHP = Pieces.getPieceMaxHPByID(pieceID);
 			Game.setIDObjectProperty("pieces", pieceID, "HP", maxHP);
+			// we do NOT register full heal metrics because no healing ability is going to use full heal. This is used SOLELY at the end of a scenario to reset HP. It should probably be renamed accordingly.
 			
 			// set update flag because of a significant change
 			GUI.updateUnits();
@@ -831,13 +853,16 @@ var Pieces = (function()
 				console.warn(`Pieces.buyAndSpawnPiece: typeName "${typeName}" not found.`);
 				return;
 			}
-			// check and deduct money here.
+			// TODO: check and deduct money here.
 			
 			// now, create and spawn.
 			let createPiece = () => { return Pieces.createPiece(typeName,1) };
 			
 			Game.createNewIDObject("pieces", createPiece);
 			Pieces.movePieceById(Game.getState("ID","pieces"), position);
+			
+			// this should ONLY be used by the player, so we can always add it as a metric.
+			// TODO: add metric for money
 		},
 		
 		/*
@@ -944,6 +969,8 @@ var Pieces = (function()
 			// set update flag because of a significant change
 			GUI.updateUnits();
 			GUI.updateUI();
+			
+			Metrics.addMetric("turns_played",1);
 		},
 		
 		// TODO: perhaps we shall factor AI as its own thing someday.
