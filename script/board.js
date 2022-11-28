@@ -1,5 +1,5 @@
 /*
-	"The board is set..." — Gandalf the White
+	"The board is set..." 
 	Any map updates should go through the board.
 	
 	The board is coupled with the GUI for performance reasons.
@@ -189,6 +189,8 @@ var Board = (function()
 			
 			@param originIndex - the position index of the origin tile
 			@param range - the cutoff at which the algorithm will stop. if not specified, then range is infinite.
+			
+			@return map - a hashmap of the map indexed by tile index, and containing the distance to said tile.
 		 */
 		calculateTilePathfindingDistanceMapByIndex: function(originIndex, range)
 		{
@@ -238,6 +240,17 @@ var Board = (function()
 			while( (tileToVisit = tilesToVisit.shift()) !== undefined );
 			
 			return tilesDistance;
+		},
+		
+		/**
+			Calculates the distance to a specific tile.
+		 */
+		calculatePathfindingDistanceByIndex: function(originIndex, destinationIndex)
+		{
+			// TODO: quit being lazy and actually implement a more efficient algorithm.
+			let map = Board.calculateTilePathfindingDistanceMapByIndex(originIndex, -1);
+			
+			return map[destinationIndex]; // undefined is a valid null-sy value, unfortunately.
 		},
 		
 		/* 

@@ -2,17 +2,8 @@
 	"...the pieces are moving..."
 	
 	Like chess, a piece that can move and attack.
-	
-	In later versions, a piece shall comprise of the soldiers/monsters drafted to fight.
-	Its attack/defense function is also relegated to an aggregation of individual functions.
-	
-	//goal
-	 attack once per turn.
 		
-	// do we also want a blunt/pierce/slash thingy?
-	ie, blunt = 50%, pierce = 35%, slash = 10%;
-	
-	but then that's Rock-Paper-Scissors again...? So probably okay.
+		
 	// perhaps we could outsource a few stats to weapons.
 	ie: 
 		"doppelsodner": {
@@ -29,36 +20,32 @@
 	
 	
 	TODO:
+		Add promotions (0.2.x);
+
 		// kill all the dead pieces which have no meaningful connection.
 		Pieces.prune();
 		// undeploy every unit for when that is needed.
 		Pieces.undeployAll();
 		
-		Factor out the GUI API.
-		
-		Overhaul levels to account for promotions (0.2.x);
-		
-		Unify pieces, AP, and abilities.
-			getAPCost for ability X
-		
 		Separate AP into movement points and AP
-		
-		Overhaul AP costs.
-			Ie, a horseman with 5 attacks per turn is too OP,
-				and even 3 attacks is stretching it.
 				
 		High contrast colour scheme for units...
 		
 		Change HP to FGII system: Total/Wounded/Dead.
-		
-		Add STATISTICS! Easy Job.
  */
 var Pieces = (function()
 {
 	const BASE_HIT_CHANCE_PERCENT = 35; 
 	const BASE_XP_PER_MOVE = 5; // how much a basic attack or defense will give in XP
 	
-	// TODO: factor formation count out of drawSettings and into the rest of everything
+	/*
+		Design Philosophy:
+			A generic unit at parity should die to 5 direct hits.
+			We take it extrapolating from several data points:
+				-In wesnoth, 2-3 hits at parity are a kill.
+				-A 1-hit kill is a glass cannon.
+				-20 hits to kill is far too thick.
+	 */
 	var piecesStatistics = 
 	{
 		"spearman": {
@@ -76,7 +63,7 @@ var Pieces = (function()
 				"marginX": 4,
 				"marginY": 3,
 			},
-			"HP": 100*12,
+			"HP": 50*12,
 			"AP": 3,
 			"attack": 20,
 			"defense": 15,
@@ -105,7 +92,7 @@ var Pieces = (function()
 				"marginX": 3,
 				"marginY": 3,
 			},
-			"HP": 100*12,
+			"HP": 50*12,
 			"AP": 3,
 			"attack": 25,
 			"defense": 25,
@@ -130,7 +117,7 @@ var Pieces = (function()
 				"marginX": 3,
 				"marginY": 3,
 			},
-			"HP": 100*12,
+			"HP": 50*12,
 			"AP": 3,
 			"attack": 24,
 			"defense": 20,
@@ -159,7 +146,7 @@ var Pieces = (function()
 				"marginX": 1,
 				"marginY": 1,
 			},
-			"HP": 200*3,
+			"HP": 100*3,
 			"AP": 5,
 			"attack": 30,
 			"defense": 8,
@@ -188,7 +175,7 @@ var Pieces = (function()
 				"marginX": 4,
 				"marginY": 3,
 			},
-			"HP": 50*12,
+			"HP": 25*12,
 			"AP": 2,
 			"attack": 18,
 			"defense": 12,
@@ -200,8 +187,8 @@ var Pieces = (function()
 	};
 	
 	// fields
-	var currentSelectedPiece = null;
-	var buyableSelectedPiece = null;
+	var selectedPieceID = null;
+	var selectedBuyableName = null;
 	
 	return {
 		initialize: function()
@@ -220,56 +207,56 @@ var Pieces = (function()
 			
 			// TESTING
 			Game.createNewIDObject("pieces", createGenericSpearman);
-			Pieces.movePieceById(1001, Board.calculateIndexFromCartesian(1,1));
+			Pieces.movePieceByID(1001, Board.calculateIndexFromCartesian(1,1));
 			Game.createNewIDObject("pieces", createGenericSpearman);
-			Pieces.movePieceById(1002, Board.calculateIndexFromCartesian(2,2));
+			Pieces.movePieceByID(1002, Board.calculateIndexFromCartesian(2,2));
 			Game.createNewIDObject("pieces", createGenericSpearman);
-			Pieces.movePieceById(1003, Board.calculateIndexFromCartesian(1,3));
+			Pieces.movePieceByID(1003, Board.calculateIndexFromCartesian(1,3));
 			
 			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceById(1004, Board.calculateIndexFromCartesian(10,1));
-			Pieces.movePieceById(1004, Board.calculateIndexFromCartesian(4,2));
+			Pieces.movePieceByID(1004, Board.calculateIndexFromCartesian(10,1));
+			Pieces.movePieceByID(1004, Board.calculateIndexFromCartesian(4,2));
 			
 			Game.createNewIDObject("pieces", createGenericSwordsman);
-			Pieces.movePieceById(1005, Board.calculateIndexFromCartesian(2,3));
+			Pieces.movePieceByID(1005, Board.calculateIndexFromCartesian(2,3));
 			
 			Game.createNewIDObject("pieces", createGenericHorseman);
-			Pieces.movePieceById(1006, Board.calculateIndexFromCartesian(2,4));
+			Pieces.movePieceByID(1006, Board.calculateIndexFromCartesian(2,4));
 			
 			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceById(1007, Board.calculateIndexFromCartesian(4,3));
+			Pieces.movePieceByID(1007, Board.calculateIndexFromCartesian(4,3));
 			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceById(1008, Board.calculateIndexFromCartesian(4,4));
+			Pieces.movePieceByID(1008, Board.calculateIndexFromCartesian(4,4));
 			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceById(1009, Board.calculateIndexFromCartesian(4,5));
+			Pieces.movePieceByID(1009, Board.calculateIndexFromCartesian(4,5));
 			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceById(1010, Board.calculateIndexFromCartesian(4,6));
+			Pieces.movePieceByID(1010, Board.calculateIndexFromCartesian(4,6));
 			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceById(1011, Board.calculateIndexFromCartesian(6,3));
+			Pieces.movePieceByID(1011, Board.calculateIndexFromCartesian(6,3));
 			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceById(1012, Board.calculateIndexFromCartesian(5,4));
+			Pieces.movePieceByID(1012, Board.calculateIndexFromCartesian(5,4));
 			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceById(1013, Board.calculateIndexFromCartesian(6,4));
+			Pieces.movePieceByID(1013, Board.calculateIndexFromCartesian(6,4));
 			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceById(1014, Board.calculateIndexFromCartesian(6,6));
+			Pieces.movePieceByID(1014, Board.calculateIndexFromCartesian(6,6));
 			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceById(1015, Board.calculateIndexFromCartesian(6,7));
+			Pieces.movePieceByID(1015, Board.calculateIndexFromCartesian(6,7));
 			
 			Game.createNewIDObject("pieces", createGenericSpearman);
-			Pieces.movePieceById(1016, Board.calculateIndexFromCartesian(0,0));
+			Pieces.movePieceByID(1016, Board.calculateIndexFromCartesian(0,0));
 			
 			Game.createNewIDObject("pieces", createPikeman);
-			Pieces.movePieceById(1017, Board.calculateIndexFromCartesian(0,1));
+			Pieces.movePieceByID(1017, Board.calculateIndexFromCartesian(0,1));
 			
 			
-			Pieces.abilityMovePiece(1002, Board.calculateIndexFromCartesian(3,2));
-			Pieces.abilityMeleeAttackPiece(1002, 1004);
-			Pieces.abilityMeleeAttackPiece(1002, 1004);
-			Pieces.abilityMeleeAttackPiece(1002, 1004);
-			Pieces.abilityMeleeAttackPiece(1004, 1002);
-			Pieces.abilityMeleeAttackPiece(1004, 1002);
-			Pieces.abilityMeleeAttackPiece(1004, 1002);
-			Pieces.abilityMeleeAttackPiece(1004, 1002);
+			Abilities.abilityMovePiece(1002, Board.calculateIndexFromCartesian(3,2));
+			Abilities.abilityMeleeAttackPiece(1002, 1004);
+			Abilities.abilityMeleeAttackPiece(1002, 1004);
+			Abilities.abilityMeleeAttackPiece(1002, 1004);
+			Abilities.abilityMeleeAttackPiece(1004, 1002);
+			Abilities.abilityMeleeAttackPiece(1004, 1002);
+			Abilities.abilityMeleeAttackPiece(1004, 1002);
+			Abilities.abilityMeleeAttackPiece(1004, 1002);
 			
 			Pieces.addXP(1003,1000);
 			Pieces.damagePiece(1001,500);
@@ -297,10 +284,16 @@ var Pieces = (function()
 			piece.HP = type.HP;
 			piece.AP = type.AP;
 			piece.XP = 0;
-			piece.kills = 0;
 			piece.isDead = false;
+			piece.killedByID = null;
 			piece.team = team;
 			piece.traits = [];
+			// metrics
+			piece.totalKills = 0;
+			piece.totalDamageDealt = 0;
+			piece.totalDamageReceived = 0;
+			piece.totalDamageHealed = 0;
+			piece.totalTilesMoved = 0;
 			return piece;
 		},
 		
@@ -531,12 +524,12 @@ var Pieces = (function()
 			return buyablePieces;
 		},
 		
-		movePieceById: function(pieceID, newPosition)
+		movePieceByID: function(pieceID, newPosition)
 		{
 			// check if new position is occupied
 			if(Board.isTilePieceOccupiedIndex(newPosition))
 			{
-				console.warn(`Pieces.movePieceById: cannot move piece "${pieceID}" newPosition "${newPosition}" is already occupied!`);
+				console.warn(`Pieces.movePieceByID: cannot move piece "${pieceID}" newPosition "${newPosition}" is already occupied!`);
 				return;
 			}
 			
@@ -551,6 +544,39 @@ var Pieces = (function()
 			
 			// set update flag because of a significant change
 			GUI.updateUnits();
+		},
+		
+		/**
+			a more sophisticated algorithm which ensures that there is a valid path to the destination.
+			more expensive, and mostly used in conjucation with the ability move
+		 */
+		movePieceWithPathfindingByID: function(pieceID, destinationPosition, range)
+		{
+			let originPosition = Pieces.getPiecePositionByID(pieceID);
+			// obviously forget it if we're not moving.
+			if(originPosition === destinationPosition) return;
+			// first check if destination tile is valid 
+			if(!Board.isTileValidDestinationByIndex(destinationPosition))
+			{
+				return;
+			}
+			let distance = Board.calculatePathfindingDistanceByIndex(originPosition, destinationPosition);
+			if(distance === undefined)
+			{
+				// obviously invalid, so we do nothing. 
+				return;
+			}
+			if(range < distance)
+			{
+				// if we have not enough AP, also do nothing.
+				return;
+			}
+			// everything being valid, now we move.
+			Pieces.movePieceByID(pieceID, destinationPosition);
+			// now get our pathfinding distance 
+			Pieces.addPieceMetric(pieceID, "totalTilesMoved", distance); // assuming tilecost is always 1, this holds for now.
+			// return distance for AP cost. NOTE: this distance is not *exactly* equal.
+			return distance;
 		},
 		
 		damagePiece: function(pieceID, damageAmount, sourceID)
@@ -573,10 +599,8 @@ var Pieces = (function()
 			// set update flag because of a significant change
 			GUI.updateUnits();
 			
-			let pieceTeam = Pieces.getPieceTeamByID(pieceID);
-			if(pieceTeam === 1) Metrics.addMetric("damage_received", damageAmount);
-			let sourceTeam = Pieces.getPieceTeamByID(sourceID);
-			if(sourceTeam === 1) Metrics.addMetric("damage_dealt", damageAmount);
+			Pieces.addPieceMetric(pieceID, "totalDamageReceived", damageAmount);
+			if(sourceID) Pieces.addPieceMetric(sourceID, "totalDamageDealt", damageAmount);
 		},
 		
 		healPiece: function(pieceID, healAmount)
@@ -600,8 +624,7 @@ var Pieces = (function()
 			// set update flag because of a significant change
 			GUI.updateUnits();
 			
-			let pieceTeam = Game.getPieceTeamByID(pieceID);
-			if(pieceTeam === 1) Metrics.addMetric("health_healed", healAmount);
+			Pieces.addPieceMetric(pieceID, "totalDamageHealed", healAmount);
 		},
 		
 		killPiece: function(pieceID, sourceID)
@@ -619,11 +642,9 @@ var Pieces = (function()
 			if(sourceID) 
 			{
 				Pieces.addXP(sourceID, onKillXP);
-				// TODO: factor out stats into its own Pieces.addPieceMetric function
-				Game.changeIDObjectProperty("pieces", sourceID, "kills", 1);
 				
-				let sourceTeam = Pieces.getPieceTeamByID(sourceID);
-				if(sourceTeam === 1) Metrics.addMetric("formations_killed", 1);
+				Pieces.addPieceMetric(sourceID, "totalKills", 1);
+				Game.setIDObjectProperty("pieces", pieceID, "killedByID", sourceID);
 			}
 			// set update flag because of a significant change
 			GUI.updateUnits();
@@ -706,6 +727,52 @@ var Pieces = (function()
 			return Game.setIDObjectProperty("pieces", pieceID, "AP", newAP);
 		},
 		
+		// centralize it here for better metric management.
+		addPieceMetric: function(pieceID, metricName, value)
+		{
+			if(!pieceID) // 0 cannot possibly be a valid pieceID.
+			{
+				console.warn(`Pieces.addPieceMetric: invalid pieceID ${pieceID}`);
+			}
+			if(!value && value !== 0)
+			{
+				console.warn(`Pieces.addPieceMetric: invalid value ${value}`);
+			}
+			let oldValue = Game.getIDObjectProperty("pieces",pieceID,metricName);
+			if(oldValue === undefined)
+			{
+				console.warn(`Pieces.addPieceMetric: cannot find value ${metricName}.`);
+				return;
+			}
+			let newValue = oldValue + value;
+			Game.setIDObjectProperty("pieces",pieceID,metricName,newValue);
+			
+			let team = Pieces.getPieceTeamByID(pieceID);
+			if(team === 1)
+			{
+				if(metricName === "totalKills")
+				{
+					Metrics.addMetric("formations_killed", value);
+				}
+				if(metricName === "totalDamageDealt")
+				{
+					Metrics.addMetric("damage_dealt", value);
+				}
+				if(metricName === "totalDamageReceived")
+				{
+					Metrics.addMetric("damage_received", value);
+				}
+				if(metricName === "totalDamageHealed")
+				{
+					Metrics.addMetric("health_healed", value);
+				}
+				if(metricName === "totalTilesMoved")
+				{
+					Metrics.addMetric("tiles_moved", value);
+				}
+			}
+		},
+		
 		// helper function to mark all the blue tiles for valid movement
 		getValidMovementMap: function(pieceID)
 		{
@@ -786,58 +853,6 @@ var Pieces = (function()
 			return validPositions;
 		},
 		
-		/*
-			Ability functions require APs,
-			Interfaces with GUI.
-				must be FOOLPROOF. Check EVERYTHING.
-		 */
-		abilityMovePiece: function(pieceID, destinationPosition)
-		{
-			let originPosition = Pieces.getPiecePositionByID(pieceID);
-			// obviously forget it if we're not moving.
-			if(originPosition === destinationPosition) return;
-			// first check if destination tile is valid 
-			if(!Board.isTileValidDestinationByIndex(destinationPosition))
-			{
-				return;
-			}
-			let AP = Pieces.getPieceAPByID(pieceID);
-			let range = Pieces.getPieceMovementRangeByID(pieceID);
-			
-			let movementMap = Board.calculateTilePathfindingDistanceMapByIndex(originPosition, range);
-			// if not within range, then do nothing.
-			if(movementMap[destinationPosition] === undefined)
-			{
-				return;
-			}
-			// assume 1AP per move cost.
-			let APCost = movementMap[destinationPosition];
-			Pieces.spendPieceAP(pieceID, APCost);
-			// now actually move
-			Pieces.movePieceById(pieceID, destinationPosition);
-		},
-		
-		abilityMeleeAttackPiece: function(attackerID, defenderID)
-		{
-			// you can't attack yourself!
-			if(attackerID === defenderID) return;
-			// or your friends!
-			if(Pieces.getPieceTeamByID(attackerID) === Pieces.getPieceTeamByID(defenderID)) return;
-			
-			let attackerPosition = Pieces.getPiecePositionByID(attackerID);
-			let defenderPosition = Pieces.getPiecePositionByID(defenderID);
-			
-			// if not neighbours, we cannot reach in melee
-			if(!Board.isTileNeighbourByIndex(attackerPosition, defenderPosition)) return;
-			
-			let AP = Pieces.getPieceAPByID(attackerID);
-			let APCost = 1;
-			if(APCost > AP) return; // JIC 
-			Pieces.spendPieceAP(attackerID, APCost);
-			// now actually attack
-			Pieces.attackPiece(attackerID, defenderID);
-		},
-		
 		/* Buying */
 		buyAndSpawnPiece: function(typeName, position)
 		{
@@ -859,7 +874,7 @@ var Pieces = (function()
 			let createPiece = () => { return Pieces.createPiece(typeName,1) };
 			
 			Game.createNewIDObject("pieces", createPiece);
-			Pieces.movePieceById(Game.getState("ID","pieces"), position);
+			Pieces.movePieceByID(Game.getState("ID","pieces"), position);
 			
 			// this should ONLY be used by the player, so we can always add it as a metric.
 			// TODO: add metric for money
@@ -870,40 +885,47 @@ var Pieces = (function()
 		 */
 		getSelectedPiece: function()
 		{
-			return currentSelectedPiece;
+			return selectedPieceID;
 		},			
 		 
 		selectPiece: function(pieceID)
 		{
 			// cannot select dead pieces 
 			if(Pieces.isPieceDeadByID(pieceID)) return;
-			currentSelectedPiece = pieceID;
-			Pieces.deselectBuyPiece(); // we can't select both at once.
+			Pieces.deselectBuyPiece();
+			selectedPieceID = pieceID;
 			GUI.updateUI();
 		},
 		
 		deselectPiece: function()
 		{
-			currentSelectedPiece = null;
+			selectedPieceID = null;
 			GUI.updateUI();
 		},
 		
 		getSelectedBuyPiece: function()
 		{
-			return buyableSelectedPiece;
+			return selectedBuyableName;
 		},
 		
 		setSelectedBuyPiece: function(name)
 		{
-			buyableSelectedPiece = name;
-			Pieces.deselectPiece(); // we can't select both at once.
+			Pieces.deselectAllSelected();
+			selectedBuyableName = name;
 			GUI.updateUI();
 		},
 		
 		deselectBuyPiece: function()
 		{
-			buyableSelectedPiece = null;
+			selectedBuyableName = null;
 			GUI.updateUI();
+		},
+		
+		deselectAllSelected: function()
+		{
+			Pieces.deselectPiece();
+			Pieces.deselectBuyPiece();
+			Abilities.deselectAbility();
 		},
 		
 		/*
@@ -930,7 +952,7 @@ var Pieces = (function()
 					return Pieces.createPiece(randomElementInArray(types),1)
 				};
 			Game.createNewIDObject("pieces", createAlly);
-			Pieces.movePieceById(Game.getState("ID","pieces"), index);
+			Pieces.movePieceByID(Game.getState("ID","pieces"), index);
 		},
 		 
 		// spawn randomly on the right
@@ -949,7 +971,7 @@ var Pieces = (function()
 			
 			let createEnemySpearman = () => {return Pieces.createPiece("undead_spearman",2)};
 			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceById(Game.getState("ID","pieces"), index);
+			Pieces.movePieceByID(Game.getState("ID","pieces"), index);
 		},
 		
 		/* 
@@ -1005,7 +1027,7 @@ var Pieces = (function()
 				// in case there is no valid destination, do nothing.
 				if(leftmostIndex)
 				{
-					Pieces.abilityMovePiece(pieceID, leftmostIndex);
+					Abilities.abilityMovePiece(pieceID, leftmostIndex);
 				}
 				// if we still have AP left
 				let AP = Pieces.getPieceAPByID(pieceID);
@@ -1016,7 +1038,7 @@ var Pieces = (function()
 					let targetID = attackTargetsID[0];
 					if(targetID)
 					{
-						Pieces.abilityMeleeAttackPiece(pieceID, targetID);
+						Abilities.abilityMeleeAttackPiece(pieceID, targetID);
 					}
 				}
 			}

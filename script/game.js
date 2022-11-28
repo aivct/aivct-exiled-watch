@@ -236,6 +236,8 @@ var Metrics = (function()
 			Game.setState("metrics","gold_spent",0);
 			Game.setState("metrics","xp_earned",0);
 			Game.setState("metrics","turns_played",0);
+			Game.setState("metrics","tiles_moved",0);
+			Game.setState("metrics","ap_spent",0);
 		},
 		
 		addMetric: function(name, value)

@@ -92,13 +92,16 @@ var GUI = (function()
 		
 		createGUI: function()
 		{
-			GUIContainer = document.createElement("div");
-			GUIContainer.classList.add("gui-container");
 			document.body.addEventListener("pointerdown",GUI.handlePointerdown, false);
 			document.body.addEventListener("pointerup",GUI.handlePointerup, false);
 			document.body.addEventListener("pointermove",GUI.handlePointermove, false);
 			document.body.addEventListener("keydown",GUI.handleKeydown, false);
 			document.body.addEventListener("keyup",GUI.handleKeyup, false);
+			
+			GUIContainer = document.createElement("div");
+			GUIContainer.style.width = "800px";
+			GUIContainer.style.height = "600px";
+			GUIContainer.classList.add("gui-container");
 			GUIContainer.style.position = "relative";
 			
 			mapLayer = GUI.createMapLayer();
@@ -116,6 +119,9 @@ var GUI = (function()
 			// DOM elements 
 			unitBuyerElement = GUI.createUnitBuyerElement();
 			GUIContainer.appendChild(unitBuyerElement);
+			
+			abilityToolbarElement = GUI.createAbilityToolbarElement();
+			GUIContainer.appendChild(abilityToolbarElement);
 			
 			document.body.appendChild(GUIContainer);
 		},
@@ -163,13 +169,13 @@ var GUI = (function()
 			element.style.position = "absolute";
 			element.style.top = "50px";
 			element.style.left = "0";
+			element.classList.add("gui-element");
 			
 			let header = document.createElement("h1");
 			let textNode = document.createTextNode("UNITS");
 			header.appendChild(textNode);
 			element.appendChild(header);
 			
-			element.classList.add("gui-element");
 			// add units within it.
 			var buyablePieces = Pieces.getBuyablePieces();
 			for(var index = 0; index < buyablePieces.length; index++)
@@ -214,7 +220,57 @@ var GUI = (function()
 		//TODO: hide and update
 		createAbilityToolbarElement: function()
 		{
+			let element = document.createElement("div");
+			element.style.position = "absolute";
+			element.style.bottom = "0";
+			element.style.left = "0";
+			element.classList.add("gui-element");
 			
+			let header = document.createElement("h1");
+			let textNode = document.createTextNode("ABILITIES");
+			header.appendChild(textNode);
+			element.appendChild(header);
+			
+			let abilities = Abilities.getAbilities();
+			for(let key in abilities)
+			{
+				let ability = abilities[key];
+				let button = GUI.createAbilityToolbarButtonElement(ability);
+				element.appendChild(button);
+			}
+			
+			return element;
+		},
+		
+		createAbilityToolbarButtonElement: function(ability)
+		{
+			let element = document.createElement("div");
+			element.classList.add("gui-square-button");
+			element.classList.add("horizontal");
+			element.onclick = () => { Abilities.setSelectedAbility(ability.abilityName) };
+			
+			let icon = document.createElement("canvas");
+			icon.width = tileSize;
+			icon.height = tileSize;
+			let iconContext = icon.getContext("2d");
+			iconContext.webkitImageSmoothingEnabled = false;
+			iconContext.msImageSmoothingEnabled = false;
+			iconContext.imageSmoothingEnabled = false;
+			
+			let imageName = ability.image;
+			let image = Assets.getImage(imageName);
+			if(!image)
+			{
+				console.warn(`GUI.createAbilityToolbarButtonElement: no image of ${imageName} found.`);
+				return;
+			}
+			let width = image.getWidth() * 1;
+			let height = image.getHeight() * 1;
+			image.draw(iconContext, 0, 0);
+			
+			element.appendChild(icon);
+			
+			return element;
 		},
 		
 		createTooltipElement: function()
@@ -499,7 +555,6 @@ var GUI = (function()
 			if(context.font !== font) context.font = font;
 			
 			let buyablePieceID = Pieces.getSelectedBuyPiece();
-			let selectedPieceID = Pieces.getSelectedPiece();
 			if(buyablePieceID)
 			{
 				// TODO: change the hardcoded assumption that 1 is the player team
@@ -512,9 +567,10 @@ var GUI = (function()
 					GUI.drawHighlightedTile(context, tilePosition);
 				}
 			}
+			
+			let selectedPieceID = Pieces.getSelectedPiece();
 			if(selectedPieceID)
 			{
-				let selectedPieceAP = Pieces.getPieceAPByID(selectedPieceID);
 				
 				// highlight selected in green
 				let selectedPiecePosition = Pieces.getPiecePositionByID(selectedPieceID);
@@ -522,28 +578,95 @@ var GUI = (function()
 				context.lineWidth = 2;
 				GUI.drawHighlightedTile(context, selectedPiecePosition);
 				
-				// draw movement map
-				let movementMap = Pieces.getValidMovementMap(selectedPieceID);
-				context.strokeStyle = "blue";
-				context.fillStyle = "blue";
-				for(var tileIndex in movementMap)
+				let abilityName = Abilities.getSelectedAbility();
+				switch(abilityName)
 				{
-					GUI.drawHighlightedTile(context, tileIndex);
-					GUI.debugDrawTileText(context, tileIndex, movementMap[tileIndex]);
+					case "ability_melee_attack":
+						// draw attack map but ONLY if there is AP left
+						let selectedPieceAP = Pieces.getPieceAPByID(selectedPieceID);
+						if(selectedPieceAP > 0)
+						{
+							let validMeleeTargetsID = Pieces.getValidTargetsID(selectedPieceID, 1, "attack");
+							context.strokeStyle = "red";
+							for(let targetCount = 0; targetCount < validMeleeTargetsID.length; targetCount++)
+							{
+								let targetID = validMeleeTargetsID[targetCount];
+								let targetPosition = Pieces.getPiecePositionByID(targetID);
+								
+								GUI.drawHighlightedTile(context, targetPosition);
+							}
+						}
+						break;
+					case "ability_move":
+					default:
+						// draw movement map
+						let movementMap = Pieces.getValidMovementMap(selectedPieceID);
+						context.strokeStyle = "blue";
+						context.fillStyle = "blue";
+						for(var tileIndex in movementMap)
+						{
+							GUI.drawHighlightedTile(context, tileIndex);
+							GUI.debugDrawTileText(context, tileIndex, movementMap[tileIndex]);
+						}
+						break;
+				}
+			}
+		},
+		
+		// TODO: redo UI for better flow
+		onTileClick: function(positionIndex)
+		{
+			// see if we selected a piece
+			let abilityName = Abilities.getSelectedAbility();
+			let buyPieceName = Pieces.getSelectedBuyPiece();
+			let selectedPieceID = Pieces.getSelectedPiece();
+			let pieceID = Board.getTilePieceOccupiedIndex(positionIndex);
+			
+			if(buyPieceName)
+			{				
+				// TODO: change hardcoded team assumption 
+				// see if tile is valid 
+				let validSpawnLocations = Pieces.getValidSpawnPositions(1);
+				if(validSpawnLocations.indexOf(positionIndex) > -1)
+				{
+					Pieces.buyAndSpawnPiece(buyPieceName, positionIndex);
 				}
 				
-				// draw attack map but ONLY if there is AP left
-				if(selectedPieceAP > 0)
+				// deselect when we're done
+				Pieces.deselectBuyPiece();
+			}
+			
+			if(selectedPieceID)
+			{
+				switch(abilityName)
 				{
-					let validMeleeTargetsID = Pieces.getValidTargetsID(selectedPieceID, 1, "attack");
-					context.strokeStyle = "red";
-					for(let targetCount = 0; targetCount < validMeleeTargetsID.length; targetCount++)
-					{
-						let targetID = validMeleeTargetsID[targetCount];
-						let targetPosition = Pieces.getPiecePositionByID(targetID);
-						
-						GUI.drawHighlightedTile(context, targetPosition);
-					}
+					case "ability_melee_attack":
+						if(pieceID)
+						{
+							// assume it's attack
+							Abilities.abilityMeleeAttackPiece(selectedPieceID, pieceID);
+							
+							// deselect at the end of day
+							Pieces.deselectPiece();
+							Abilities.deselectAbility();
+						}
+						break;
+					case "ability_move":
+					default:
+						// else, assume it's movement
+						Abilities.abilityMovePiece(selectedPieceID, positionIndex);
+						// deselect at the end of day
+						Pieces.deselectPiece();
+						Abilities.deselectAbility();
+						break;
+				}
+			}
+			else 
+			{
+				// assume we're selecting 
+				if(pieceID)
+				{
+					Pieces.selectPiece(pieceID);
 				}
 			}
 		},
@@ -685,55 +808,6 @@ var GUI = (function()
 			{
 				mousedownTile = null;
 				Pieces.deselectPiece();
-			}
-		},
-		
-		onTileClick: function(positionIndex)
-		{
-			// see if we selected a piece
-			let buyPieceName = Pieces.getSelectedBuyPiece();
-			let selectedPieceID = Pieces.getSelectedPiece();
-			let pieceID = Board.getTilePieceOccupiedIndex(positionIndex);
-			
-			if(buyPieceName)
-			{				
-				// TODO: change hardcoded team assumption 
-				// see if tile is valid 
-				let validSpawnLocations = Pieces.getValidSpawnPositions(1);
-				if(validSpawnLocations.indexOf(positionIndex) > -1)
-				{
-					Pieces.buyAndSpawnPiece(buyPieceName, positionIndex);
-				}
-				
-				// deselect when we're done
-				Pieces.deselectBuyPiece();
-			}
-			
-			if(selectedPieceID)
-			{
-				if(pieceID)
-				{
-					// assume it's attack
-					Pieces.abilityMeleeAttackPiece(selectedPieceID, pieceID);
-					
-					// deselect at the end of day
-					Pieces.deselectPiece();
-				}
-				else 
-				{
-					// else, assume it's movement
-					Pieces.abilityMovePiece(selectedPieceID, positionIndex);
-					// deselect at the end of day
-					Pieces.deselectPiece();
-				}
-			}
-			else 
-			{
-				// assume we're selecting 
-				if(pieceID)
-				{
-					Pieces.selectPiece(pieceID);
-				}
 			}
 		},
 		

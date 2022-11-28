@@ -1,3 +1,7 @@
+0.1.9
+-unified abilities and refactored them out of pieces
+-added a few new metrics, as well as individual metrics for pieces.
+-finished that weird gandalf quote thingy in the comments. now I can rest.
 0.1.8
 -added metrics and started registering game stats
 0.1.7

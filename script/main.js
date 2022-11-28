@@ -43,6 +43,22 @@ var Assets = (function()
 			"src": "./assets/undead_spearman.png",
 			"type": "sprite",
 		},
+		"ability_move": {
+			"src": "./assets/ability_move.png",
+			"type": "sprite",
+		},
+		"ability_melee_attack": {
+			"src": "./assets/ability_melee_attack.png",
+			"type": "sprite",
+		},
+		"ability_ranged_attack": {
+			"src": "./assets/ability_ranged_attack.png",
+			"type": "sprite",
+		},
+		"ability_sleep": {
+			"src": "./assets/ability_sleep.png",
+			"type": "sprite",
+		},
 		"XP_ranks_sheet": {
 			"src": "./assets/XP_ranks_sheet.png",
 			"type": "sheet",
