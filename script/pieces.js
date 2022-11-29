@@ -32,6 +32,9 @@
 		High contrast colour scheme for units...
 		
 		Change HP to FGII system: Total/Wounded/Dead.
+		
+		Flanking in melee 
+		Archers
  */
 var Pieces = (function()
 {
@@ -96,7 +99,7 @@ var Pieces = (function()
 			"AP": 3,
 			"attack": 25,
 			"defense": 25,
-			"damage": 10,
+			"damage": 12,
 			"armor": 4,
 			"onKillXP": 100,
 			"formationCount": 12,

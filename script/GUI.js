@@ -17,6 +17,7 @@ var GUI = (function()
 	var GUIContainer;
 	var unitBuyerElement;
 	var abilityToolbarElement;
+	var endTurnButtonElement;
 	var tooltipElement;
 	
 	var mapLayer;
@@ -122,6 +123,9 @@ var GUI = (function()
 			
 			abilityToolbarElement = GUI.createAbilityToolbarElement();
 			GUIContainer.appendChild(abilityToolbarElement);
+			
+			endTurnButtonElement = GUI.createEndTurnButtonElement();
+			GUIContainer.appendChild(endTurnButtonElement);
 			
 			document.body.appendChild(GUIContainer);
 		},
@@ -276,6 +280,25 @@ var GUI = (function()
 		createTooltipElement: function()
 		{
 			
+		},
+		
+		createEndTurnButtonElement: function()
+		{
+			let element = document.createElement("div");
+			element.style.position = "absolute";
+			element.style.top = "0";
+			element.style.right = "0";
+			element.classList.add("gui-element");
+			element.classList.add("button");
+			// TODO: remember there are other end turns as well...
+			element.onclick = () => { Pieces.endTurn() };
+			
+			let header = document.createElement("h1");
+			let textNode = document.createTextNode("END TURN");
+			header.appendChild(textNode);
+			element.appendChild(header);
+			
+			return element;
 		},
 		
 		draw: function(timestamp)
@@ -700,24 +723,32 @@ var GUI = (function()
 			return {x: cartesianX, y: cartesianY};
 		},
 		
-		keyCodeToKeyName: function(keyCode)
+		keyToKeyName: function(key)
 		{
-			switch(keyCode)
+			switch(key)
 			{
-				case 37:
-				case 65:
+				case "1":
+					return "1";
+					break;
+				case "2":
+					return "2";
+					break;
+				case "3":
+					return "3";
+					break;
+				case "4":
+					return "4";
+					break;
+				case "ArrowLeft":
 					return "left";
 					break;
-				case 39:
-				case 68:
+				case "ArrowRight":
 					return "right";
 					break;
-				case 40:
-				case 83:
+				case "ArrowDown":
 					return "down";
 					break;
-				case 38:
-				case 87:
+				case "ArrowUp":
 					return "up";
 					break;
 			}
@@ -825,14 +856,34 @@ var GUI = (function()
 		
 		handleKeydown: function(event)
 		{
-			let keyName = GUI.keyCodeToKeyName(event.keyCode);
+			let keyName = GUI.keyToKeyName(event.key);
 			keysPressed[keyName] = true;
+			
+			GUI.onKeyPressed(keyName);
+		},
+		
+		onKeyPressed: function(key)
+		{
+			console.log(key);
+			// TODO: refactor hotkeys to be dynamic instead of hardcoded
+			switch(key)
+			{
+				case "1":
+					Abilities.setSelectedAbility("ability_move");
+					break;
+				case "2":
+					Abilities.setSelectedAbility("ability_melee_attack");
+					break;
+				default:
+					break;
+			}
 		},
 		
 		handleKeyup: function(event)
 		{
-			let keyName = GUI.keyCodeToKeyName(event.keyCode);
+			let keyName = GUI.keyToKeyName(event.key);
 			keysPressed[keyName] = false;
 		},
+		
 	};
 })();
