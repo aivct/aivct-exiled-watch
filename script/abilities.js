@@ -56,10 +56,10 @@ var Abilities = (function()
 			let AP = Pieces.getPieceAPByID(pieceID);
 			let range = Pieces.getPieceMovementRangeByID(pieceID);
 			
-			let APCost = Pieces.movePieceWithPathfindingByID(pieceID, destinationPosition, range);
-			if(APCost > 0)
+			let movementCost = Pieces.movePieceWithPathfindingByID(pieceID, destinationPosition, range);
+			if(movementCost > 0)
 			{
-				Pieces.spendPieceAP(pieceID, APCost);
+				Pieces.spendPieceMovement(pieceID, movementCost);
 			}
 		},
 		

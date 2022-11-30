@@ -215,90 +215,7 @@ var Pieces = (function()
 	
 	return {
 		newGame: function()
-		{
-			/*
-			let createGenericSpearman = () => {return Pieces.createPiece("spearman",1)};
-			let createGenericSwordsman = () => {return Pieces.createPiece("swordsman",1)};
-			let createGenericHorseman = () => {return Pieces.createPiece("horseman",1)};
-			let createPikeman = () => {return Pieces.createPiece("pikeman",1)};
-			
-			let createEnemySpearman = () => {return Pieces.createPiece("undead_spearman",2)};
-			
-			// TESTING
-			Game.createNewIDObject("pieces", createGenericSpearman);
-			Pieces.movePieceByID(1001, Board.calculateIndexFromCartesian(1,1));
-			Game.createNewIDObject("pieces", createGenericSpearman);
-			Pieces.movePieceByID(1002, Board.calculateIndexFromCartesian(2,2));
-			Game.createNewIDObject("pieces", createGenericSpearman);
-			Pieces.movePieceByID(1003, Board.calculateIndexFromCartesian(1,3));
-			
-			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceByID(1004, Board.calculateIndexFromCartesian(10,1));
-			Pieces.movePieceByID(1004, Board.calculateIndexFromCartesian(4,2));
-			
-			Game.createNewIDObject("pieces", createGenericSwordsman);
-			Pieces.movePieceByID(1005, Board.calculateIndexFromCartesian(2,3));
-			
-			Game.createNewIDObject("pieces", createGenericHorseman);
-			Pieces.movePieceByID(1006, Board.calculateIndexFromCartesian(2,4));
-			
-			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceByID(1007, Board.calculateIndexFromCartesian(4,3));
-			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceByID(1008, Board.calculateIndexFromCartesian(4,4));
-			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceByID(1009, Board.calculateIndexFromCartesian(4,5));
-			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceByID(1010, Board.calculateIndexFromCartesian(4,6));
-			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceByID(1011, Board.calculateIndexFromCartesian(6,3));
-			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceByID(1012, Board.calculateIndexFromCartesian(5,4));
-			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceByID(1013, Board.calculateIndexFromCartesian(6,4));
-			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceByID(1014, Board.calculateIndexFromCartesian(6,6));
-			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceByID(1015, Board.calculateIndexFromCartesian(6,7));
-			
-			Game.createNewIDObject("pieces", createGenericSpearman);
-			Pieces.movePieceByID(1016, Board.calculateIndexFromCartesian(0,0));
-			
-			Game.createNewIDObject("pieces", createPikeman);
-			Pieces.movePieceByID(1017, Board.calculateIndexFromCartesian(0,1));
-			
-			
-			Abilities.abilityMovePiece(1002, Board.calculateIndexFromCartesian(3,2));
-			Abilities.abilityMeleeAttackPiece(1002, 1004);
-			Abilities.abilityMeleeAttackPiece(1002, 1004);
-			Abilities.abilityMeleeAttackPiece(1002, 1004);
-			Abilities.abilityMeleeAttackPiece(1004, 1002);
-			Abilities.abilityMeleeAttackPiece(1004, 1002);
-			Abilities.abilityMeleeAttackPiece(1004, 1002);
-			Abilities.abilityMeleeAttackPiece(1004, 1002);
-			
-			Pieces.addXP(1003,1000);
-			Pieces.damagePiece(1001,500);
-			 */
-			// TEMP TEMP 
-			
-			/*
-			Game.createNewIDObject("pieces", Pieces.createPiece);
-			Pieces.movePieceByID(1001, Board.calculateIndexFromCartesian(1,1));
-			
-			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
-			Pieces.addSoldierByID(1001, 1001);
-			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
-			Pieces.addSoldierByID(1001, 1002);
-			
-			Game.createNewIDObject("pieces", Pieces.createPiece);
-			Pieces.movePieceByID(1002, Board.calculateIndexFromCartesian(1,2));
-			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
-			Pieces.addSoldierByID(1002, 1003);
-			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
-			Pieces.addSoldierByID(1002, 1004);
-			*/
-			
+		{			
 			Pieces.createTestSpearmen();
 			Pieces.movePieceByID(Game.getState("ID", "pieces"), Board.calculateIndexFromCartesian(1,1));
 			
@@ -325,6 +242,8 @@ var Pieces = (function()
 			// the piece has not been placed anywhere yet and so it is null
 			piece.position = null;
 			piece.AP = 5;
+			piece.movement = 0;
+			piece.maxMovement = 0;
 			
 			piece.isDead = false;
 			piece.killedByID = null;
@@ -414,64 +333,7 @@ var Pieces = (function()
 		{
 			return Game.getIDObjectProperty("pieces",pieceID,"position");
 		},
-		/*
-		// in future, any bonuses will be applied in these functions, 
-		// and that is why we have to write an additional function
-		getPieceAttackByID: function(pieceID)
-		{
-			let baseAttack = Pieces.getPieceTypePropertyByID(pieceID, "attack");
-			
-			// level increase
-			let level = Pieces.getPieceLevelByID(pieceID);
-			let levelBonus = level;
-			
-			let attack = baseAttack + levelBonus;
-			
-			return attack;
-		},
-		
-		getPieceDefenseByID: function(pieceID)
-		{
-			let baseDefense = Pieces.getPieceTypePropertyByID(pieceID, "defense");
-			
-			let level = Pieces.getPieceLevelByID(pieceID);
-			let levelBonus = level;
-			
-			let defense = baseDefense + levelBonus;
-			
-			return defense;
-		},
-		
-		getPieceAttackDamageByID: function(pieceID)
-		{
-			let baseDamage = Pieces.getPieceTypePropertyByID(pieceID, "damage");
-			
-			let damage = baseDamage;
-			
-			return damage;
-		},
-		
-		getPieceArmorByID: function(pieceID)
-		{
-			let baseArmor = Pieces.getPieceTypePropertyByID(pieceID, "armor");
-			
-			let armor = baseArmor;
-			
-			return armor;
-		},
-		
-		getPieceHPByID: function(pieceID)
-		{
-			return Game.getIDObjectProperty("pieces", pieceID, "HP");
-		},
-		
-		getPieceMaxHPByID: function(pieceID)
-		{
-			let baseMaxHP = Pieces.getPieceTypePropertyByID(pieceID, "HP");
-			
-			return baseMaxHP;
-		},
-		 */
+
 		getPieceAPByID: function(pieceID)
 		{
 			return Game.getIDObjectProperty("pieces", pieceID, "AP");
@@ -483,9 +345,19 @@ var Pieces = (function()
 			return 5;
 		},
 		
+		getPieceMovementByID: function(pieceID)
+		{
+			return Game.getIDObjectProperty("pieces", pieceID, "movement");
+		},
+		
+		getPieceMaxMovementByID: function(pieceID)
+		{
+			return Game.getIDObjectProperty("pieces", pieceID, "maxMovement");
+		},
+		
 		getPieceMovementRangeByID: function(pieceID)
 		{
-			return Pieces.getPieceAPByID(pieceID);
+			return Pieces.getPieceMovementByID(pieceID);
 		},
 		
 		getPieceXPByID: function(pieceID)
@@ -604,6 +476,7 @@ var Pieces = (function()
 			// check if soldier is valid
 			let soldier = Soldiers.getSoldierByID(soldierID);
 			if(!soldier) return;
+			soldier.formationID = pieceID;
 			
 			// TODO: factor out, this should not be accessed directly
 			let soldiers = Game.getIDObjectProperty("pieces", pieceID, "soldiers");
@@ -634,10 +507,16 @@ var Pieces = (function()
 			soldiersPosition[position] = soldierID;
 			 */
 			soldiers.push(soldierID);
+			
+			Pieces.recalculatePieceMovementByID(pieceID);
 		},
 		
 		removeSoldierByID: function(pieceID, soldierID)
 		{
+			let soldier = Soldiers.getSoldierByID(soldierID);
+			if(!soldier) return;
+			soldier.formationID = null;
+			
 			// TODO: factor out, this should not be accessed directly
 			let soldiers = Game.getIDObjectProperty("pieces", pieceID, "soldiers");
 			let soldiersPosition = Game.getIDObjectProperty("pieces", pieceID, "soldiersPosition");
@@ -655,6 +534,38 @@ var Pieces = (function()
 				}
 			}
 			 */
+			 
+			Pieces.recalculatePieceMovementByID(pieceID);
+			
+			// TODO: TEMP, if this is the last soldier, then kill the formation.
+			// TODO: add an actual onkill function
+			if(soldiers.length <= 0)
+			{
+				Game.setIDObjectProperty("pieces",pieceID,"isDead",true);
+				let position = Pieces.getPiecePositionByID(pieceID);
+				Board.setTilePieceOccupiedIndex(position, null);
+			}
+		},
+		
+		// takes the minimum movement of all the pieces as the movement speed of the whole piece.
+		// obviously recalculated whenever there is a change in pieces.
+		recalculatePieceMovementByID: function(pieceID)
+		{
+			// TODO: factor out, this should not be accessed directly
+			let soldiers = Game.getIDObjectProperty("pieces", pieceID, "soldiers");
+			let minMovement;
+			
+			for(let index = 0; index < soldiers.length; index++)
+			{
+				let soldierID = soldiers[index];
+				let movement = Soldiers.getSoldierMovementByID(soldierID);
+				
+				if(minMovement === undefined) minMovement = movement;
+				if(movement < minMovement) minMovement = movement;
+			}
+			
+			Game.setIDObjectProperty("pieces", pieceID, "maxMovement", minMovement);
+			return minMovement;
 		},
 		
 		movePieceByID: function(pieceID, newPosition)
@@ -858,6 +769,21 @@ var Pieces = (function()
 			}
 			
 			return Game.setIDObjectProperty("pieces", pieceID, "AP", newAP);
+		},
+		
+		spendPieceMovement: function(pieceID, amount)
+		{
+			let movement = Pieces.getPieceMovementByID(pieceID);
+			let newMovement = movement - amount;
+			
+			if(newMovement < 0)
+			{
+				console.warn(`Pieces.spendmovement: newMovement "${newMovement}" is less than 0.`);
+				newMovement = 0;
+				return false;
+			}
+			
+			return Game.setIDObjectProperty("pieces", pieceID, "movement", newMovement);
 		},
 		
 		// centralize it here for better metric management.
@@ -1120,6 +1046,9 @@ var Pieces = (function()
 				let pieceID = alivePieces[index];
 				let maxAP = Pieces.getPieceMaxAPByID(pieceID);
 				Game.setIDObjectProperty("pieces", pieceID, "AP", maxAP);
+				
+				let maxMovement = Pieces.getPieceMaxMovementByID(pieceID);
+				Game.setIDObjectProperty("pieces", pieceID, "movement", maxMovement);
 			}
 			
 			// set update flag because of a significant change

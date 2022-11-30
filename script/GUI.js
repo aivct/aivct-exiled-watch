@@ -448,14 +448,23 @@ var GUI = (function()
 				}
 			}
 			
+			// movement indicator
+			let movementBarRatio = Pieces.getPieceMovementByID(ID) / Pieces.getPieceMaxMovementByID(ID);
+			
+			context.fillStyle = "#009900";
+			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize, tileSize, 3);
+			
+			context.fillStyle = "#00FF00";
+			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize, tileSize * movementBarRatio, 2);
+			
 			// AP indicator
 			let APBarRatio = Pieces.getPieceAPByID(ID) / Pieces.getPieceMaxAPByID(ID);
 			
 			context.fillStyle = "#9E8B00";
-			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize, tileSize, 3);
+			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize + 4, tileSize, 3);
 			
 			context.fillStyle = "#FAFF00";
-			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize, tileSize * APBarRatio, 2);
+			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize + 4, tileSize * APBarRatio, 2);
 			/*
 			// HP indicator
 			let HPBarRatio = Pieces.getPieceHPByID(ID) / Pieces.getPieceMaxHPByID(ID);

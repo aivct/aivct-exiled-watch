@@ -12,6 +12,7 @@
 			-20 hits to kill is far too thick.
 			
 	TODO: Auto-retreat. If a soldier's HP is below X, then they will move to reserves.
+	TODO: Names
  */
 var Soldiers = (function()
 {
@@ -35,10 +36,10 @@ var Soldiers = (function()
 			
 			soldier.HP = 100;
 			soldier.maxHP = 100;
-			soldier.AP = 2;
-			soldier.maxAP = 2; // todo: factor this out and move back to formations
+			// soldier.AP = 2;
+			// soldier.maxAP = 2; // todo: factor this out and move back to formations
 			soldier.movement = 3;
-			soldier.maxMovement = 3;
+			// soldier.maxMovement = 3;
 			soldier.fatigue = 0;
 			
 			// TEMP
@@ -162,7 +163,7 @@ var Soldiers = (function()
 			let maxHP = Game.getIDObjectProperty("soldiers", soldierID, "maxHP");
 			return maxHP;
 		},
-		
+		/*
 		getSoldierAPByID: function(soldierID)
 		{
 			return Game.getIDObjectProperty("soldiers", soldierID, "AP");
@@ -173,7 +174,7 @@ var Soldiers = (function()
 			let maxAP = Game.getIDObjectProperty("soldiers", soldierID, "maxAP");
 			return maxAP;
 		},
-		
+		 */
 		getSoldierMovementByID: function(soldierID)
 		{
 			return Game.getIDObjectProperty("soldiers", soldierID, "movement");
@@ -291,10 +292,10 @@ var Soldiers = (function()
 		
 		killSoldier: function(soldierID, killerID)
 		{
-			// TODO: housekeeping for formations
+			let pieceID = Soldiers.getSoldierFormationIDByID(soldierID);
+			if(pieceID) Pieces.removeSoldierByID(pieceID, soldierID);
 			
 			Game.setIDObjectProperty("soldiers", soldierID, "isDead", true);
-			console.log(`Je suis mort! ${soldierID}`);
 			// TODO: add metrics
 			
 			// TODO: onkill
@@ -321,6 +322,7 @@ var Soldiers = (function()
 		},
 		
 		// TODO: factor out
+		/*
 		spendSoldierMovement: function(soldierID, amount)
 		{
 			let movement = Soldiers.getSoldierMovementByID(soldierID);
@@ -335,7 +337,7 @@ var Soldiers = (function()
 			
 			return Game.setIDObjectProperty("soldiers", soldierID, "movement", newMovement);
 		},
-		
+		 */
 		onEndTurn: function()
 		{
 			// TODO: handle status effects
