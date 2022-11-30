@@ -7,7 +7,7 @@
 var Board = (function()
 {
 	const DEFAULT_MAP_WIDTH = 16;
-	const DEFAULT_MAP_HEIGHT = 8;
+	const DEFAULT_MAP_HEIGHT = 16;
 	
 	return {
 		createMap: function(width = DEFAULT_MAP_WIDTH, height = DEFAULT_MAP_HEIGHT)

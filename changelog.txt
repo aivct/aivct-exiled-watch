@@ -1,3 +1,10 @@
+0.2.0
+-completely overhauled how pieces work.
+	-now, they are more akin to a formation.
+	-added soldiers too, to stand in a formation.
+	-temporarily disabled several features in preparation for overhaul. We have basic functionality after this major change.
+-reordered canvas layering
+-added foolproofing to Metrics.addMetric
 0.1.10
 -added end turn button.
 0.1.9

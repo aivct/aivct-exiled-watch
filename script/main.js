@@ -3,7 +3,6 @@ const VERSION = "0.1.7";
 function initialize()
 {
 	Game.initialize();
-	Pieces.initialize();
 	
 	GUI.initialize();
 	Game.newGame();

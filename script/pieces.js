@@ -1,8 +1,31 @@
 /*
 	"...the pieces are moving..."
 	
-	Like chess, a piece that can move and attack.
+	Like chess, a piece that can move and attack. 
+	
+	A piece shall compose of its individual soldiers.
+	TODO: overhaul attack and defense to be something more like SOW:TNS.
+			
+	NOTE:
+		Decompose:
+		KillerID ->
+			KillerType 
+			KillerID
 		
+		uncullable: if the piece is a leader, unique, story, etc...
+		a faceless mook is usually culled if it's dead (and sometimes even when alive!) after a battle, 
+			but if it's killed someone important, then it gets to live on (and may become the player's greatest nemesis!)
+			
+		dynarow: if a unit is wounded, automatically exchange with a fresh unit to the back in melee combat.
+		
+		stamina:
+			undead don't suffer from stamina problems, but are very weak.
+			greenskins/wildlings are like celts, using a lot of stamina and then becoming weak
+			human legions must manage stamina, but their tactics can conserve quite a bit of stamina.
+	
+	In later versions, a piece shall comprise of the soldiers/monsters drafted to fight.
+	Its attack/defense function is also relegated to an aggregation of individual functions.
+	This should really be renamed: formations.
 		
 	// perhaps we could outsource a few stats to weapons.
 	ie: 
@@ -20,7 +43,7 @@
 	
 	
 	TODO:
-		Add promotions (0.2.x);
+		// Add promotions (0.2.x);
 
 		// kill all the dead pieces which have no meaningful connection.
 		Pieces.prune();
@@ -28,26 +51,23 @@
 		Pieces.undeployAll();
 		
 		Separate AP into movement points and AP
-				
 		High contrast colour scheme for units...
-		
 		Change HP to FGII system: Total/Wounded/Dead.
 		
 		Flanking in melee 
 		Archers
+	
+	[0][1][2]|[2][1][0]
+	[3][4][5]|[5][4][3]
+	[6][7][8]|[8][7][6]
  */
 var Pieces = (function()
 {
 	const BASE_HIT_CHANCE_PERCENT = 35; 
 	const BASE_XP_PER_MOVE = 5; // how much a basic attack or defense will give in XP
-	
 	/*
-		Design Philosophy:
-			A generic unit at parity should die to 5 direct hits.
-			We take it extrapolating from several data points:
-				-In wesnoth, 2-3 hits at parity are a kill.
-				-A 1-hit kill is a glass cannon.
-				-20 hits to kill is far too thick.
+	const FORMATION_WIDTH = 4;
+	const FORMATION_HEIGHT = 3;	
 	 */
 	var piecesStatistics = 
 	{
@@ -194,13 +214,9 @@ var Pieces = (function()
 	var selectedBuyableName = null;
 	
 	return {
-		initialize: function()
-		{
-			
-		},
-		
 		newGame: function()
 		{
+			/*
 			let createGenericSpearman = () => {return Pieces.createPiece("spearman",1)};
 			let createGenericSwordsman = () => {return Pieces.createPiece("swordsman",1)};
 			let createGenericHorseman = () => {return Pieces.createPiece("horseman",1)};
@@ -263,6 +279,31 @@ var Pieces = (function()
 			
 			Pieces.addXP(1003,1000);
 			Pieces.damagePiece(1001,500);
+			 */
+			// TEMP TEMP 
+			
+			/*
+			Game.createNewIDObject("pieces", Pieces.createPiece);
+			Pieces.movePieceByID(1001, Board.calculateIndexFromCartesian(1,1));
+			
+			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+			Pieces.addSoldierByID(1001, 1001);
+			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+			Pieces.addSoldierByID(1001, 1002);
+			
+			Game.createNewIDObject("pieces", Pieces.createPiece);
+			Pieces.movePieceByID(1002, Board.calculateIndexFromCartesian(1,2));
+			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+			Pieces.addSoldierByID(1002, 1003);
+			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+			Pieces.addSoldierByID(1002, 1004);
+			*/
+			
+			Pieces.createTestSpearmen();
+			Pieces.movePieceByID(Game.getState("ID", "pieces"), Board.calculateIndexFromCartesian(1,1));
+			
+			Pieces.createTestEnemy();
+			Pieces.movePieceByID(Game.getState("ID", "pieces"), Board.calculateIndexFromCartesian(1,2));
 		},
 		
 		/*
@@ -277,20 +318,27 @@ var Pieces = (function()
 					piece.HP = piece.maxHP/2;
 				}
 		 */
-		createPiece: function(typeName = "spearman", team = 1)
+		createPiece: function(team = 1)
 		{
-			let type = piecesStatistics[typeName];
+			// let type = piecesStatistics[typeName];
 			let piece = {};
 			// the piece has not been placed anywhere yet and so it is null
 			piece.position = null;
-			piece.typeName = typeName;
-			piece.HP = type.HP;
-			piece.AP = type.AP;
-			piece.XP = 0;
+			piece.AP = 5;
+			
 			piece.isDead = false;
 			piece.killedByID = null;
 			piece.team = team;
-			piece.traits = [];
+			
+			piece.soldiers = [];
+			/*
+			// note: a soldier can occupy more than one tile, ie horses.
+			piece.soldiersPosition = [];
+			for(let index = 0; index < FORMATION_WIDTH * FORMATION_HEIGHT; index++)
+			{
+				piece.soldiersPosition.push(null);
+			}
+			 */
 			// metrics
 			piece.totalKills = 0;
 			piece.totalDamageDealt = 0;
@@ -300,7 +348,28 @@ var Pieces = (function()
 			return piece;
 		},
 		
-		getPiece: function(pieceID)
+		// specialized factories 
+		createTestSpearmen: function()
+		{
+			Game.createNewIDObject("pieces", () => { return Pieces.createPiece(1) } );
+			
+			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+			Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
+			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+			Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
+		},
+		
+		createTestEnemy: function()
+		{
+			Game.createNewIDObject("pieces", () => { return Pieces.createPiece(2) } );
+			
+			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+			Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
+			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+			Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
+		},
+		
+		getPieceByID: function(pieceID)
 		{
 			return Game.getIDObject("pieces",pieceID);
 		},
@@ -335,14 +404,8 @@ var Pieces = (function()
 		
 		getPieceImageByID: function(pieceID)
 		{
-			var piece = Pieces.getPiece(pieceID);
-			return Pieces.getPieceImageByObject(piece);
-		},
-		
-		getPieceImageByObject: function(piece)
-		{
-			let imageName = piecesStatistics[piece?.typeName]?.image;
-			let image = Assets.getImage(imageName);
+			// TODO: placeholder, to be replaced with dynamic sprites.
+			let image = Assets.getImage("spearman");
 			return image;
 		},
 		
@@ -351,6 +414,7 @@ var Pieces = (function()
 		{
 			return Game.getIDObjectProperty("pieces",pieceID,"position");
 		},
+		/*
 		// in future, any bonuses will be applied in these functions, 
 		// and that is why we have to write an additional function
 		getPieceAttackByID: function(pieceID)
@@ -407,7 +471,7 @@ var Pieces = (function()
 			
 			return baseMaxHP;
 		},
-		
+		 */
 		getPieceAPByID: function(pieceID)
 		{
 			return Game.getIDObjectProperty("pieces", pieceID, "AP");
@@ -415,9 +479,8 @@ var Pieces = (function()
 		
 		getPieceMaxAPByID: function(pieceID)
 		{
-			let baseMaxAP = Pieces.getPieceTypePropertyByID(pieceID, "AP");
-			
-			return baseMaxAP;
+			// TODO: temp placeholder
+			return 5;
 		},
 		
 		getPieceMovementRangeByID: function(pieceID)
@@ -470,17 +533,19 @@ var Pieces = (function()
 		
 		isPieceDeadByID: function(pieceID)
 		{
-			let piece = Pieces.getPiece(pieceID);
-			return piece?.isDead;
+			return Game.getIDObjectProperty("pieces", pieceID, "isDead");
 		},
 		
 		getPieceSoldierCountByID: function(pieceID)
 		{
+			/*
 			let HPRatio = Pieces.getPieceHPByID(pieceID) / Pieces.getPieceMaxHPByID(pieceID);
 			let spriteCount = Pieces.getPieceTypePropertyByID(pieceID, "formationCount") * HPRatio;
 			// a half dead person is still alive.
 			spriteCount = Math.ceil(spriteCount);
-			return spriteCount;
+			 */
+			let soldiers = Game.getIDObjectProperty("pieces", pieceID, "soldiers");
+			return soldiers.length;
 		},
 		
 		/*
@@ -508,7 +573,7 @@ var Pieces = (function()
 			if(!type) return;
 			return type[propertyName];
 		},
-		
+		/*
 		getBuyablePieces: function()
 		{
 			let buyablePieces = [];
@@ -525,6 +590,71 @@ var Pieces = (function()
 			}
 			
 			return buyablePieces;
+		},
+		*/
+		
+		getSoldierByPosition: function(pieceID, position)
+		{
+			let soldiersPosition = Game.getIDObjectProperty("pieces", pieceID, "soldiersPosition");
+			return soldiersPosition[position];
+		},
+		
+		addSoldierByID: function(pieceID, soldierID)
+		{
+			// check if soldier is valid
+			let soldier = Soldiers.getSoldierByID(soldierID);
+			if(!soldier) return;
+			
+			// TODO: factor out, this should not be accessed directly
+			let soldiers = Game.getIDObjectProperty("pieces", pieceID, "soldiers");
+			let soldiersPosition = Game.getIDObjectProperty("pieces", pieceID, "soldiersPosition");
+			
+			// TODO: placeholder
+			let soldierWidth = 1;
+			let soldierHeight = 1;
+			/*
+			// if no position, then cram it in the first possible spot.
+			// if STILL there is no space, then return.
+			if(position === undefined)
+			{
+				return; // TODO.
+			}
+			
+			// see if it's already occupied.
+			if(soldiersPosition[position])
+			{
+				return;
+			}
+			
+			if(soldiers.indexOf(soldierID) > -1)
+			{
+				console.warn(`Pieces.addSoldierByID: soldier "${soldierID}" already found in piece "${pieceID}".`);
+				return;
+			}
+			soldiersPosition[position] = soldierID;
+			 */
+			soldiers.push(soldierID);
+		},
+		
+		removeSoldierByID: function(pieceID, soldierID)
+		{
+			// TODO: factor out, this should not be accessed directly
+			let soldiers = Game.getIDObjectProperty("pieces", pieceID, "soldiers");
+			let soldiersPosition = Game.getIDObjectProperty("pieces", pieceID, "soldiersPosition");
+			
+			// remove element in array 
+			removeElementInArray(soldiers, soldierID);
+			/*
+			// remove all instances of its position
+			for(let index = 0; index < soldiersPosition.length; index++)
+			{
+				let ID = soldiersPosition[index];
+				if(soldierID === ID)
+				{
+					soldiersPosition[index] = null;
+				}
+			}
+			 */
 		},
 		
 		movePieceByID: function(pieceID, newPosition)
@@ -581,7 +711,7 @@ var Pieces = (function()
 			// return distance for AP cost. NOTE: this distance is not *exactly* equal.
 			return distance;
 		},
-		
+		/*
 		damagePiece: function(pieceID, damageAmount, sourceID)
 		{
 			// no negative damage allowed.
@@ -629,7 +759,8 @@ var Pieces = (function()
 			
 			Pieces.addPieceMetric(pieceID, "totalDamageHealed", healAmount);
 		},
-		
+		 */
+		 /*
 		killPiece: function(pieceID, sourceID)
 		{
 			// housekeeping
@@ -652,7 +783,8 @@ var Pieces = (function()
 			// set update flag because of a significant change
 			GUI.updateUnits();
 		},
-		
+		 */
+		 /*
 		addXP: function(pieceID, value)
 		{
 			if(!(value > 0)) 
@@ -672,7 +804,8 @@ var Pieces = (function()
 			let team = Pieces.getPieceTeamByID(pieceID);
 			if(team === 1) Metrics.addMetric("xp_earned", value);
 		},
-		
+		 */
+		 /*
 		fullHealPiece: function(pieceID)
 		{
 			let maxHP = Pieces.getPieceMaxHPByID(pieceID);
@@ -682,37 +815,34 @@ var Pieces = (function()
 			// set update flag because of a significant change
 			GUI.updateUnits();
 		},
-		
+		 */
 		attackPiece: function(attackerID, defenderID)
-		{
-			let soldierCount = Pieces.getPieceSoldierCountByID(attackerID);
-			
+		{			
 			// get attack and defense
+			/*
 			let attack = Pieces.getPieceAttackByID(attackerID);
 			let defense = Pieces.getPieceDefenseByID(defenderID);
 			let weaponDamage = Pieces.getPieceAttackDamageByID(attackerID);
 			let armor = Pieces.getPieceArmorByID(defenderID);
-
-			for(var soldierIndex = 0; soldierIndex < soldierCount; soldierIndex++)
-			{
-				let diceRoll = randomInteger(0,99);
-				let hitchance = BASE_HIT_CHANCE_PERCENT + attack - defense;
-				
-				if(diceRoll < hitchance)
-				{
-					
-					let damage = weaponDamage - armor; 
-					// don't worry, negative values are handled already.
-					Pieces.damagePiece(defenderID, damage, attackerID);
-					// add particle effect
-					GUI.addParticleAbovePiece("damage", damage, defenderID);
-				}
-			}
+			 */
+			 
+			let attackerSoldiers = Game.getIDObjectProperty("pieces", attackerID, "soldiers");
+			let defenderSoldiers = Game.getIDObjectProperty("pieces", defenderID, "soldiers");
 			
+			for(var soldierIndex = 0; soldierIndex < attackerSoldiers.length; soldierIndex++)
+			{
+				let attackerSoldierID = attackerSoldiers[soldierIndex];
+				let defenderSoldierID = randomElementInArray(defenderSoldiers);
+				
+				Soldiers.attackSoldier(attackerSoldierID, defenderSoldierID);
+			}
+			/*
 			// add some XP for the attack itself.
 			// add some XP for the defender as well.
 			Pieces.addXP(attackerID, BASE_XP_PER_MOVE);
 			Pieces.addXP(defenderID, BASE_XP_PER_MOVE);
+			 */
+			GUI.updateUnits();
 		},
 		
 		spendPieceAP: function(pieceID, amount)
@@ -934,7 +1064,7 @@ var Pieces = (function()
 		/*
 			Spawning
 		 */
-		
+		/*
 		// spawn randomly on the left
 		spawnAlly: function()
 		{
@@ -976,7 +1106,8 @@ var Pieces = (function()
 			Game.createNewIDObject("pieces", createEnemySpearman);
 			Pieces.movePieceByID(Game.getState("ID","pieces"), index);
 		},
-		
+		 */
+		 
 		/* 
 			End Turn
 		 */	
@@ -997,7 +1128,7 @@ var Pieces = (function()
 			
 			Metrics.addMetric("turns_played",1);
 		},
-		
+		/*
 		// TODO: perhaps we shall factor AI as its own thing someday.
 		AITurn: function(team)
 		{
@@ -1046,28 +1177,35 @@ var Pieces = (function()
 				}
 			}
 		},
-		
+		 */
 		// stress test
+		/*
 		TestOneHundredTurns: function()
 		{
 			for(index = 0; index < 100; index++)
 			{
-				let diceRoll = Math.random();
-				let spawnChanceOne = 0.10;
-				let spawnChanceTwo = 0.60;
-				
-				if(diceRoll < spawnChanceOne)
-				{
-					Pieces.spawnAlly();
-				}
-				
-				if(diceRoll < spawnChanceTwo)
-				{
-					Pieces.spawnEnemy();
-				}
-				
-				Pieces.AITurn(1);Pieces.AITurn(2);Pieces.endTurn();
+				Pieces.TestOneTurn();
 			} 
 		},
+		
+		TestOneTurn: function()
+		{
+			let diceRoll = Math.random();
+			let spawnChanceOne = 0.10;
+			let spawnChanceTwo = 0.60;
+			
+			if(diceRoll < spawnChanceOne)
+			{
+				Pieces.spawnAlly();
+			}
+			
+			if(diceRoll < spawnChanceTwo)
+			{
+				Pieces.spawnEnemy();
+			}
+			
+			Pieces.AITurn(1);Pieces.AITurn(2);Pieces.endTurn();
+		},
+		 */
 	}
 })();

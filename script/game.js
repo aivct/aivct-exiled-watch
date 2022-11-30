@@ -32,6 +32,7 @@ var Game = (function()
 			
 			// id'ed objects
 			state["pieces"] = [];
+			state["soldiers"] = [];
 			state["ID"] = {}; // list of lastIDs
 			// TODO: if no ID is found, search from parent category for lastID. 
 			// And if THAT still doesn't work, then assign default 1000.
@@ -43,6 +44,7 @@ var Game = (function()
 		newGame: function()
 		{
 			state["ID"]["pieces"] = 1000;
+			state["ID"]["soldiers"] = 1000;
 			Board.createMap();
 			Pieces.newGame();
 			
@@ -248,7 +250,11 @@ var Metrics = (function()
 				console.warn(`Metrics.addMetric: metric "${name}" returned "${previousValue}". Resetting to 0.`);
 				Game.setState("metrics",name,0);
 			}
-			// TODO: add foolproofing
+			if(!value && value !== 0)
+			{
+				console.warn(`Metrics.addMetric: invalid valid "${value}".`);
+				return;
+			}
 			return Game.addState("metrics",name,value);
 		},
 		

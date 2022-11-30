@@ -8,11 +8,14 @@
 	It has two jobs: 
 		- translate data into pixels
 		- and translate pixels back into data.
+		
+	TODO: cull drawing if not visible (if bounding box is outside of view, ex).
  */
 var GUI = (function()
 {
 	const DEFAULT_PARTICLE_LIFESPAN = 2000;
 	const TILE_MARGIN = 5;
+	const VISIBLE_MARGIN = 100;
 	
 	var GUIContainer;
 	var unitBuyerElement;
@@ -108,18 +111,19 @@ var GUI = (function()
 			mapLayer = GUI.createMapLayer();
 			GUIContainer.appendChild(mapLayer.getCanvas());
 			
+			UILayer = GUI.createUILayer();
+			GUIContainer.appendChild(UILayer.getCanvas());
+			
 			unitsLayer = GUI.createUnitsLayer();
 			GUIContainer.appendChild(unitsLayer.getCanvas());
 			
 			effectsLayer = GUI.createEffectsLayer();
 			GUIContainer.appendChild(effectsLayer.getCanvas());
 			
-			UILayer = GUI.createUILayer();
-			GUIContainer.appendChild(UILayer.getCanvas());
 			
 			// DOM elements 
-			unitBuyerElement = GUI.createUnitBuyerElement();
-			GUIContainer.appendChild(unitBuyerElement);
+			//unitBuyerElement = GUI.createUnitBuyerElement();
+			//GUIContainer.appendChild(unitBuyerElement);
 			
 			abilityToolbarElement = GUI.createAbilityToolbarElement();
 			GUIContainer.appendChild(abilityToolbarElement);
@@ -318,19 +322,19 @@ var GUI = (function()
 			let delta = Math.floor(elapsed * (200 / 1000));
 			if(keysPressed["left"])
 			{
-				GUI.panBoardX(-delta);
+				GUI.panBoardX(delta);
 			}
 			if(keysPressed["right"])
 			{
-				GUI.panBoardX(delta);
+				GUI.panBoardX(-delta);
 			}
 			if(keysPressed["up"])
 			{
-				GUI.panBoardY(-delta);
+				GUI.panBoardY(delta);
 			}
 			if(keysPressed["down"])
 			{
-				GUI.panBoardY(delta);
+				GUI.panBoardY(-delta);
 			}
 			
 			lastTime = timestamp;
@@ -400,21 +404,20 @@ var GUI = (function()
 			let positionCartesian = Board.calculateCartesianFromIndex(position);
 			let canvasPosition = GUI.cartesianToCanvas(positionCartesian.x, positionCartesian.y);
 			
-			let sprite = Pieces.getPieceImageByObject(unit);
-			if(!sprite) return;
 			// draw depending on its HP, most likely temp for now
 			let ID = unit?.ID;
 			if(!ID) return;
+			let sprite = Pieces.getPieceImageByID(ID);
+			if(!sprite) return;
 			let unitLevel = Pieces.getPieceLevelByID(ID);
-			let drawSettings = Pieces.getPieceTypePropertyByID(ID, "drawSettings");
-			let spritesToDraw = drawSettings.formationCount;
-			spritesToDraw = Pieces.getPieceSoldierCountByID(ID);
-			let width = drawSettings.width;
-			let height = drawSettings.height;
-			let rowWidth = drawSettings.rowWidth;
-			let marginX = drawSettings.marginX;
-			let marginY = drawSettings.marginY;
-			let rowOddX = drawSettings.rowOddX;
+			//let drawSettings = Pieces.getPieceTypePropertyByID(ID, "drawSettings");
+			let spritesToDraw = Pieces.getPieceSoldierCountByID(ID);
+			let width = 6;
+			let height = 6;
+			let rowWidth = 4;
+			let marginX = 3;
+			let marginY = 3;
+			let rowOddX = 1;
 			for(let index = 0; index < spritesToDraw; index++)
 			{
 				let rowCount = Math.floor(index / rowWidth);
@@ -453,7 +456,7 @@ var GUI = (function()
 			
 			context.fillStyle = "#FAFF00";
 			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize, tileSize * APBarRatio, 2);
-			
+			/*
 			// HP indicator
 			let HPBarRatio = Pieces.getPieceHPByID(ID) / Pieces.getPieceMaxHPByID(ID);
 			
@@ -462,6 +465,7 @@ var GUI = (function()
 			
 			context.fillStyle = "red";
 			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize + 4, tileSize * HPBarRatio, 2);
+			 */
 		},
 		
 		drawEffects: function(context, canvas, lapse)
@@ -864,7 +868,6 @@ var GUI = (function()
 		
 		onKeyPressed: function(key)
 		{
-			console.log(key);
 			// TODO: refactor hotkeys to be dynamic instead of hardcoded
 			switch(key)
 			{

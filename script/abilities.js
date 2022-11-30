@@ -12,6 +12,7 @@
 					
 	//goal
 	 attack once per turn.
+	TODO: isRanged, canHeal, etc
 	 
 	 factor movement OUT, or at least out in the general UI flow (perhaps make it the default null?
 
