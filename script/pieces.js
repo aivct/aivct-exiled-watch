@@ -31,151 +31,6 @@ var Pieces = (function()
 	const BASE_XP_PER_MOVE = 5; // how much a basic attack or defense will give in XP
 	
 	const MAX_AP = 2;
-	/*
-	const FORMATION_WIDTH = 4;
-	const FORMATION_HEIGHT = 3;	
-	 */
-	/*
-	var piecesStatistics = 
-	{
-		"spearman": {
-			"typeName": "spearman",
-			"name": "Spearman",
-			"image": "spearman",
-			"drawSettings": 
-			{
-				// not its actual width or height, 
-				// but the DISPLAY width and height for formations
-				"width": 6,
-				"height": 6,
-				"rowWidth": 4,
-				"rowOddX": 1,
-				"marginX": 4,
-				"marginY": 3,
-			},
-			"HP": 50*12,
-			"AP": 3,
-			"attack": 20,
-			"defense": 15,
-			"damage": 8,
-			"armor": 0,
-			"onKillXP": 50,
-			"formationCount": 12,
-			
-			"buyable": true,
-			"buyablePriceGold": 50,
-			"buyablePriceManpower": 12,
-		},
-		
-		"pikeman": {
-			"typeName": "pikeman",
-			"name": "Pikeman",
-			"image": "pikeman",
-			"drawSettings": 
-			{
-				// not its actual width or height, 
-				// but the DISPLAY width and height for formations
-				"width": 6,
-				"height": 6,
-				"rowWidth": 4,
-				"rowOddX": 1,
-				"marginX": 3,
-				"marginY": 3,
-			},
-			"HP": 50*12,
-			"AP": 3,
-			"attack": 25,
-			"defense": 25,
-			"damage": 12,
-			"armor": 4,
-			"onKillXP": 100,
-			"formationCount": 12,
-		},
-		
-		"swordsman": {
-			"typeName": "swordsman",
-			"name": "Swordsman",
-			"image": "swordsman",
-			"drawSettings": 
-			{
-				// not its actual width or height, 
-				// but the DISPLAY width and height for formations
-				"width": 6,
-				"height": 6,
-				"rowWidth": 4,
-				"rowOddX": 1,
-				"marginX": 3,
-				"marginY": 3,
-			},
-			"HP": 50*12,
-			"AP": 3,
-			"attack": 24,
-			"defense": 20,
-			"damage": 10,
-			"armor": 1,
-			"onKillXP": 50,
-			"formationCount": 12,
-			
-			"buyable": true,
-			"buyablePriceGold": 75,
-			"buyablePriceManpower": 12,
-		},
-		
-		"horseman": {
-			"typeName": "horseman",
-			"name": "Horseman",
-			"image": "horseman",
-			"drawSettings": 
-			{
-				// not its actual width or height, 
-				// but the DISPLAY width and height for formations
-				"width": 6,
-				"height": 4,
-				"rowWidth": 1,
-				"rowOddX": 6,
-				"marginX": 1,
-				"marginY": 1,
-			},
-			"HP": 100*3,
-			"AP": 5,
-			"attack": 30,
-			"defense": 8,
-			"damage": 15,
-			"armor": 2,
-			"onKillXP": 50,
-			"formationCount": 3,
-			
-			"buyable": true,
-			"buyablePriceGold": 100,
-			"buyablePriceManpower": 3,
-		},
-		
-		"undead_spearman": {
-			"typeName": "undead_spearman",
-			"name": "Undead Spearman",
-			"image": "undead_spearman",
-			"drawSettings": 
-			{
-				// not its actual width or height, 
-				// but the DISPLAY width and height for formations
-				"width": 6,
-				"height": 6,
-				"rowWidth": 4,
-				"rowOddX": 1,
-				"marginX": 4,
-				"marginY": 3,
-			},
-			"HP": 25*12,
-			"AP": 2,
-			"attack": 18,
-			"defense": 12,
-			"damage": 7,
-			"armor": 0,
-			"onKillXP": 25,
-			"formationCount": 12,
-		},
-	};
-	 */
 	// fields
 	var selectedPieceID = null;
 	var selectedBuyableName = null;
@@ -239,20 +94,26 @@ var Pieces = (function()
 		{
 			Game.createNewIDObject("pieces", () => { return Pieces.createPiece(1) } );
 			
-			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
-			Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
-			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
-			Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
+			for(let index = 0; index < 6; index++)
+			{
+				Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+				Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
+				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "simple_spear");
+				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "gambeson");
+				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "mail_shirt");
+			}
 		},
 		
 		createTestEnemy: function()
 		{
 			Game.createNewIDObject("pieces", () => { return Pieces.createPiece(2) } );
 			
-			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
-			Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
-			Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
-			Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
+			for(let index = 0; index < 6; index++)
+			{
+				Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+				Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
+				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "shortsword");
+			}
 		},
 		
 		getPieceByID: function(pieceID)
@@ -344,6 +205,12 @@ var Pieces = (function()
 		isPieceDeadByID: function(pieceID)
 		{
 			return Game.getIDObjectProperty("pieces", pieceID, "isDead");
+		},
+		
+		getPieceSoldiersIDByID: function(pieceID)
+		{
+			let soldiers = Game.getIDObjectProperty("pieces", pieceID, "soldiers");
+			return soldiers;
 		},
 		
 		getPieceSoldierCountByID: function(pieceID)

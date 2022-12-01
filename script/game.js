@@ -8,7 +8,7 @@
 	- References are NOT allowed. Instead, use IDs.
 		ie, tile.unitOccupied = unitID; unit.tilePosition = tileIndex;
 	
-	We are effectively reinventing the wheel for databases, 
+	We are effectively reinventing the database wheel, 
 		but that's what they are for in data-oriented design, 
 		which is more suited for game programming than OOP.
  */
@@ -26,16 +26,16 @@ var Game = (function()
 			state["map"] = {};
 			state["settings"] = {};
 			state["settings"].particlesEnabled = true;
-			
+			state["equipment"] = {};
+			Equipment.initialize();
 			state["metrics"] = {};
 			Metrics.initialize();
 			
 			// id'ed objects
 			state["pieces"] = [];
 			state["soldiers"] = [];
+			// state["artifacts"] = [];
 			state["ID"] = {}; // list of lastIDs
-			// TODO: if no ID is found, search from parent category for lastID. 
-			// And if THAT still doesn't work, then assign default 1000.
 			 
 			//TODO: onload and validation after that...
 			//GUI.updateMap();
@@ -104,7 +104,9 @@ var Game = (function()
 		{
 			state = JSON.parse(dataString);
 			// do some validation... eventually
-			
+		
+			// TODO: if no ID is found, search from parent category for lastID. 
+			// And if THAT still doesn't work, then assign default 1000.	
 			// obviously we'll have to update everything
 			GUI.updateAll();
 		},

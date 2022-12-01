@@ -3,6 +3,8 @@
 	Any map updates should go through the board.
 	
 	The board is coupled with the GUI for performance reasons.
+	
+	TODO: move pathfinding to wasm for performance
  */
 var Board = (function()
 {

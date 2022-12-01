@@ -11,6 +11,30 @@
 			-In wesnoth, 2-3 hits at parity are a kill.
 			-A 1-hit kill is a glass cannon.
 			-20 hits to kill is far too thick.
+	
+	-a single pool of HP, but different body parts have different armor and damage modifier
+	
+	Hitchance 
+	
+	Head 	= 0.20
+	//Neck	= 0.05
+	Chest 	= 0.40
+	Groin	= 0.20
+	Arms 	= 0.05
+	Legs 	= 0.05
+	//Hands 	= 0.03
+	//Feet 	= 0.02
+		
+	-this should emergently cause the player to rediscover the rules of armor, in terms of most protection per unit price.
+		-sauce: https://acoup.blog/2019/05/03/collections-armor-in-order-part-i/
+	Head->Chest->Hips, Thighs, Shoulders->Legs,Arms->Hands,Feet
+	which also works as a FIFO stack. as in, ie, you see reiters losing plate greaves and donning a 'half-plate', and then finally culminating into a simple cuirass, and in WWI only a helmet.
+	
+	Usually neck protection is done with cloaks, until you get to full plate armor.
+	
+	But seriously, most of the time you're only going to care about head/chest protection, the rest is basically cosmetic.
+	
+	TODO: indicators for damage and a way for players to get more information about which armor sets work and which don't.
 			
 	TODO: Auto-retreat. If a soldier's HP is below X, then they will move to reserves.
 	TODO: Names
@@ -21,25 +45,31 @@
 			undead don't suffer from stamina problems, but are very weak.
 			greenskins/wildlings are like celts, using a lot of stamina and then becoming weak
 			human legions must manage stamina, but their tactics can conserve quite a bit of stamina.
-	
 	TODO:
-	// perhaps we could outsource a few stats to weapons.
-	ie: 
-		"doppelsodner": {
-			"weapon": "greatsword"
-			"melee": 35,
-			"defense": 20,
-			"ranged": 0,
-		}
-		
-		"greatsword": {
-			"damage": 7,
-			"type": slash,
-		}
+		unify body parts. redesign and finish design for body parts.
  */
 var Soldiers = (function()
 {
+	const MIN_DAMAGE = 1;
+	const DEFAULT_MIN_DAMAGE = 5;
+	const DEFAULT_MAX_DAMAGE = 10;
 	const BASE_HIT_CHANCE_PERCENT = 35;
+	
+	const BODY_PARTS_HIT_CHANCE = {
+		"head": 5,
+		"chest": 12,
+		"groin": 5,
+		"arms": 3,
+		"legs": 2
+	}
+	
+	const BODY_PARTS_DAMAGE_MODIFIER = {
+		"head": 2.0,
+		"chest": 1.0,
+		"groin": 1.2,
+		"arms": 0.8,
+		"legs": 0.8
+	}
 	
 	var backstoriesStatistics = {
 		
@@ -70,8 +100,7 @@ var Soldiers = (function()
 			soldier.attack = 15;
 			soldier.defense = 10;
 			soldier.accuracy = 10;
-			soldier.weaponDamage = 150;
-			soldier.armor = 0;
+			soldier.armor = 2;
 			
 			soldier.isDead = false;
 			soldier.killedByID = null;
@@ -81,6 +110,11 @@ var Soldiers = (function()
 			soldier.isOfficer = false;
 			soldier.officerID = null; // if soldier is an officer, additional stats here.
 			
+			// equipment slots...?
+			/*
+				Layers: Under, Over, Armor, Cover
+			 */
+			soldier.equipment = [];
 			soldier.effects = [];
 			soldier.traits = [];
 			soldier.backstory = "";
@@ -222,13 +256,20 @@ var Soldiers = (function()
 			return accuracy;
 		},
 		
-		getSoldierWeaponDamageByID: function(soldierID)
+		// always returns a valid {min:x,max:y} pair.
+		getSoldierWeaponMinMaxDamageByID: function(soldierID)
 		{
-			let weaponDamage = Game.getIDObjectProperty("soldiers", soldierID, "weaponDamage");
-			return weaponDamage;
+			let weaponKey = Soldiers.getSoldierWeaponKeyByID(soldierID);
+			let damage = {min: DEFAULT_MIN_DAMAGE, max: DEFAULT_MAX_DAMAGE};
+			if(weaponKey)
+			{
+				damage.min = Equipment.getEquipmentMinDamageByKey(weaponKey);
+				damage.max = Equipment.getEquipmentMaxDamageByKey(weaponKey);
+			}
+			return damage;
 		},
 		
-		getSoldierWeaponRangeByID: function(soldier)
+		getSoldierWeaponRangeByID: function(soldierID)
 		{
 			let weaponRange = 1;
 			return weaponRange;
@@ -238,6 +279,26 @@ var Soldiers = (function()
 		{
 			let armor = Game.getIDObjectProperty("soldiers", soldierID, "armor");
 			return armor;
+		},
+		
+		getSoldierArmorBodyPartByID: function(soldierID, bodyPart)
+		{
+			// TODO:
+			let totalArmor = 0;
+			let equipmentKeys = Game.getIDObjectProperty("soldiers", soldierID, "equipment");
+			
+			for(let index = 0; index < equipmentKeys.length; index++)
+			{
+				let equipmentKey = equipmentKeys[index];
+				let equipmentType = Equipment.getEquipmentTypeByKey(equipmentKey);
+				if(equipmentType !== "armor") continue;
+				
+				let armor = Equipment.getEquipmentArmorByKey(equipmentKey);
+				let armorCoverage = Equipment.getEquipmentArmorCoverageByKey(equipmentKey, bodyPart);
+				let layerArmor = armor * armorCoverage / 100;
+				totalArmor += layerArmor;
+			}
+			return totalArmor;
 		},
 		
 		getSoldierTeamByID: function(soldierID)
@@ -250,7 +311,64 @@ var Soldiers = (function()
 			return Game.getIDObjectProperty("soldiers", soldierID, "isDead");
 		},
 		
+		hasSoldierEquipmentByID: function(soldierID, equipmentKey)
+		{
+			let equipment = Game.getIDObjectProperty("soldiers", soldierID, "equipment");
+			if(equipment.indexOf(equipmentKey) > -1)
+			{
+				return true;
+			}
+			return false;
+		},
+		
+		// get the first weapon.
+		getSoldierWeaponKeyByID: function(soldierID)
+		{
+			let equipmentKeys = Game.getIDObjectProperty("soldiers", soldierID, "equipment");
+			for(let index = 0; index < equipmentKeys.length; index++)
+			{
+				let equipmentKey = equipmentKeys[index];
+				if(Equipment.getEquipmentTypeByKey(equipmentKey) === "weapon")
+				{
+					return equipmentKey;
+				}
+			}
+		},
+		
 		/* Setters */
+		
+		// add without dealing with player equipment stocks
+		addSoldierEquipment: function(soldierID, equipmentKey)
+		{
+			if(Soldiers.hasSoldierEquipmentByID(soldierID, equipmentKey))
+			{
+				// cannot add equipment if it is already there 
+				return false;
+			}
+			
+			// TODO: deal with 'slots'
+			
+			let equipment = Game.getIDObjectProperty("soldiers", soldierID, "equipment");
+			equipment.push(equipmentKey);
+			return true;
+		},
+		
+		// checks if the player has enough equipment first before equiping
+		equipSoldierByID: function(soldierID, equipmentKey)
+		{
+			let equipmentCount = Equipment.getEquipmentCountByKey(equipmentKey);
+			
+			if(!(equipmentCount > 0))
+			{
+				return;
+			}
+			
+			if(Soldiers.addSoldierEquipment(soldierID, equipmentKey))
+			{
+				Soldiers.removeEquipmentCountByKey(equipmentKey, 1);
+			}
+		},
+		
 		damageSoldier: function(soldierID, damageAmount, sourceID)
 		{
 			// no negative damage allowed, use .healSoldier instead
@@ -318,15 +436,25 @@ var Soldiers = (function()
 		{
 			let attack = Soldiers.getSoldierAttackByID(attackerID);
 			let defense = Soldiers.getSoldierDefenseByID(defenderID);
-			let weaponDamage = Soldiers.getSoldierWeaponDamageByID(attackerID);
-			let armor = Soldiers.getSoldierArmorByID(defenderID);
+			let weaponMinMaxDamage = Soldiers.getSoldierWeaponMinMaxDamageByID(attackerID);
 			
 			let diceRoll = randomInteger(0, 99);
 			let hitChance = BASE_HIT_CHANCE_PERCENT + attack - defense;
-			let damage = weaponDamage - armor; 
+			let weaponDamage = randomInteger(weaponMinMaxDamage.min, weaponMinMaxDamage.max);
 			
 			if(diceRoll < hitChance)
 			{
+				let bodyPartHit = randomWeightedKey(BODY_PARTS_HIT_CHANCE);
+				let bodyPartDamageModifier = BODY_PARTS_DAMAGE_MODIFIER[bodyPartHit];
+				let armor = Soldiers.getSoldierArmorBodyPartByID(defenderID, bodyPartHit);
+				let damage = weaponDamage - armor;
+				if(damage < 0)
+				{
+					// min damage must be 1.
+					damage = MIN_DAMAGE;
+				}
+				damage = (damage) * bodyPartDamageModifier;
+				//console.log(`W:${weaponDamage}|M:${bodyPartDamageModifier}|A:${armor}|D:${damage}`);
 				Soldiers.damageSoldier(defenderID, damage, attackerID);
 				// TODO: particle effect
 			}

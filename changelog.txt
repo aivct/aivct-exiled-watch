@@ -1,3 +1,8 @@
+0.2.3
+-added Equipment and revamped how combat works.
+	-weapon damage is now derived from the equiped weapon.
+	-armor now includes five body parts: head, chest, groin, legs, arms.
+		-HP however is still one big bar, but different body parts does different damage
 0.2.2
 -cleaned up the code somewhat
 -added undeployAll function to Pieces

@@ -38,7 +38,7 @@ var GUI = (function()
 	var fontFamily = "Square-Font";
 	var fontSize = 18;
 	// TODO: zoom
-	const sizeMultiplier = 1;
+	const sizeMultiplier = 1; // NOT zoom, but a static multiplier to draw size.
 	var tileSize;
 	// use for scrolling
 	var offsetX;
@@ -431,10 +431,10 @@ var GUI = (function()
 					, (sprite.getWidth() * sizeMultiplier)
 					, (sprite.getHeight() * sizeMultiplier) );
 			}
+			context.globalAlpha = 1;
 			
 			// XP indicator
 			/*
-			context.globalAlpha = 1;
 			if(unitLevel > 0)
 			{
 				let rankSprite = Assets.getImage(`XP_ranks_sheet_${unitLevel}`);
@@ -466,16 +466,37 @@ var GUI = (function()
 			
 			context.fillStyle = "#FAFF00";
 			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize + 4, tileSize * APBarRatio, 2);
-			/*
-			// HP indicator
-			let HPBarRatio = Pieces.getPieceHPByID(ID) / Pieces.getPieceMaxHPByID(ID);
+			
+			// HP Bars, one big bar instead
+			let soldiers = Pieces.getPieceSoldiersIDByID(ID);
+			let totalHP = 0;
+			let totalMaxHP = 0;
+			for(let index = 0; index < soldiers.length; index++)
+			{
+				let soldierID = soldiers[index];
+				totalHP += Soldiers.getSoldierHPByID(soldierID);
+				totalMaxHP += Soldiers.getSoldierMaxHPByID(soldierID);
+				
+				/*
+				let HPBarRatio = Soldiers.getSoldierHPByID(soldierID) / Soldiers.getSoldierMaxHPByID(soldierID);
+				
+				let barSize = (tileSize / soldiers.length) - 1;
+				let leftX = (barSize + 1) * index;
+				
+				context.fillStyle = "#7b0404";
+				context.fillRect(canvasPosition.x + leftX, canvasPosition.y + tileSize - 4, barSize, 3);
+				
+				context.fillStyle = "red";
+				context.fillRect(canvasPosition.x + leftX, canvasPosition.y + tileSize - 4, barSize * HPBarRatio, 2);
+				*/
+			}
+			let HPBarRatio = totalHP / totalMaxHP;
 			
 			context.fillStyle = "#7b0404";
-			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize + 4, tileSize, 3);
+			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize - 4, tileSize, 3);
 			
 			context.fillStyle = "red";
-			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize + 4, tileSize * HPBarRatio, 2);
-			 */
+			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize - 4, tileSize * HPBarRatio, 2);
 		},
 		
 		drawEffects: function(context, canvas, lapse)
