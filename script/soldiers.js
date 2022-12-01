@@ -2,9 +2,10 @@
 	A soldier goes to war.
 	They belong to a formation.
 	
-	Individual soldiers have no 'class', or template, as it is known.
+	Individual soldiers have no 'class'.
+	However, players can customize soldiers, either individually or with 'templates'.
 	
-	Design Philosophy:
+	HP Design Philosophy:
 		A generic unit at parity should die to 5 direct hits.
 		We take it extrapolating from several data points:
 			-In wesnoth, 2-3 hits at parity are a kill.
@@ -13,12 +14,38 @@
 			
 	TODO: Auto-retreat. If a soldier's HP is below X, then they will move to reserves.
 	TODO: Names
+	TODO: Archers
+	
+	TODO:
+	stamina:
+			undead don't suffer from stamina problems, but are very weak.
+			greenskins/wildlings are like celts, using a lot of stamina and then becoming weak
+			human legions must manage stamina, but their tactics can conserve quite a bit of stamina.
+	
+	TODO:
+	// perhaps we could outsource a few stats to weapons.
+	ie: 
+		"doppelsodner": {
+			"weapon": "greatsword"
+			"melee": 35,
+			"defense": 20,
+			"ranged": 0,
+		}
+		
+		"greatsword": {
+			"damage": 7,
+			"type": slash,
+		}
  */
 var Soldiers = (function()
 {
 	const BASE_HIT_CHANCE_PERCENT = 35;
 	
 	var backstoriesStatistics = {
+		
+	}
+	
+	var statusEffectsStatistics = {
 		
 	}
 	
@@ -36,10 +63,7 @@ var Soldiers = (function()
 			
 			soldier.HP = 100;
 			soldier.maxHP = 100;
-			// soldier.AP = 2;
-			// soldier.maxAP = 2; // todo: factor this out and move back to formations
 			soldier.movement = 3;
-			// soldier.maxMovement = 3;
 			soldier.fatigue = 0;
 			
 			// TEMP
@@ -163,18 +187,7 @@ var Soldiers = (function()
 			let maxHP = Game.getIDObjectProperty("soldiers", soldierID, "maxHP");
 			return maxHP;
 		},
-		/*
-		getSoldierAPByID: function(soldierID)
-		{
-			return Game.getIDObjectProperty("soldiers", soldierID, "AP");
-		},
 		
-		getSoldierMaxAPByID: function(soldierID)
-		{
-			let maxAP = Game.getIDObjectProperty("soldiers", soldierID, "maxAP");
-			return maxAP;
-		},
-		 */
 		getSoldierMovementByID: function(soldierID)
 		{
 			return Game.getIDObjectProperty("soldiers", soldierID, "movement");
@@ -259,7 +272,7 @@ var Soldiers = (function()
 			Game.setIDObjectProperty("soldiers", soldierID, "HP", newHP);
 			
 			Soldiers.addSoldierMetric(soldierID, "totalDamageReceived", damageAmount);
-			if(sourceID) Soldiers.addSoldierMetric(soldierID, "totalDamageDealt", damageAmount);
+			if(sourceID) Soldiers.addSoldierMetric(sourceID, "totalDamageDealt", damageAmount);
 		},
 		
 		healSoldier: function(soldierID, healAmount)
@@ -321,23 +334,6 @@ var Soldiers = (function()
 			// TODO: XP
 		},
 		
-		// TODO: factor out
-		/*
-		spendSoldierMovement: function(soldierID, amount)
-		{
-			let movement = Soldiers.getSoldierMovementByID(soldierID);
-			let newMovement = movement - amount;
-			
-			if(newMovement < 0)
-			{
-				console.warn(`Soldiers.spendSoldierMovement: newMovement "${newMovement}" is less than 0.`);
-				newMovement = 0;
-				return false;
-			}
-			
-			return Game.setIDObjectProperty("soldiers", soldierID, "movement", newMovement);
-		},
-		 */
 		onEndTurn: function()
 		{
 			// TODO: handle status effects

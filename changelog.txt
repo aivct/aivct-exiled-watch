@@ -1,3 +1,6 @@
+0.2.2
+-cleaned up the code somewhat
+-added undeployAll function to Pieces
 0.2.1
 -split AP into movement and AP
 0.2.0

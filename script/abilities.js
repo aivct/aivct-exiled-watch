@@ -93,7 +93,6 @@ var Abilities = (function()
 		
 		setSelectedAbility: function(name)
 		{
-			Pieces.deselectBuyPiece();
 			selectedAbilityName = name;
 			GUI.updateUI();
 		},

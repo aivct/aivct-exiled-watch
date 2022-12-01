@@ -409,7 +409,6 @@ var GUI = (function()
 			if(!ID) return;
 			let sprite = Pieces.getPieceImageByID(ID);
 			if(!sprite) return;
-			let unitLevel = Pieces.getPieceLevelByID(ID);
 			//let drawSettings = Pieces.getPieceTypePropertyByID(ID, "drawSettings");
 			let spritesToDraw = Pieces.getPieceSoldierCountByID(ID);
 			let width = 6;
@@ -434,6 +433,7 @@ var GUI = (function()
 			}
 			
 			// XP indicator
+			/*
 			context.globalAlpha = 1;
 			if(unitLevel > 0)
 			{
@@ -447,7 +447,8 @@ var GUI = (function()
 						, (rankSprite.getHeight() * sizeMultiplier) );
 				}
 			}
-			
+			 */
+			 
 			// movement indicator
 			let movementBarRatio = Pieces.getPieceMovementByID(ID) / Pieces.getPieceMaxMovementByID(ID);
 			
@@ -590,20 +591,6 @@ var GUI = (function()
 			let font = `${fontSize}px ${fontFamily}`;
 			if(context.font !== font) context.font = font;
 			
-			let buyablePieceID = Pieces.getSelectedBuyPiece();
-			if(buyablePieceID)
-			{
-				// TODO: change the hardcoded assumption that 1 is the player team
-				let highlightedTiles = Pieces.getValidSpawnPositions(1);
-				for(var index = 0; index < highlightedTiles.length; index++)
-				{
-					let tilePosition = highlightedTiles[index];
-					context.strokeStyle = "yellow";
-					context.lineWidth = 2;
-					GUI.drawHighlightedTile(context, tilePosition);
-				}
-			}
-			
 			let selectedPieceID = Pieces.getSelectedPiece();
 			if(selectedPieceID)
 			{
@@ -654,23 +641,8 @@ var GUI = (function()
 		{
 			// see if we selected a piece
 			let abilityName = Abilities.getSelectedAbility();
-			let buyPieceName = Pieces.getSelectedBuyPiece();
 			let selectedPieceID = Pieces.getSelectedPiece();
 			let pieceID = Board.getTilePieceOccupiedIndex(positionIndex);
-			
-			if(buyPieceName)
-			{				
-				// TODO: change hardcoded team assumption 
-				// see if tile is valid 
-				let validSpawnLocations = Pieces.getValidSpawnPositions(1);
-				if(validSpawnLocations.indexOf(positionIndex) > -1)
-				{
-					Pieces.buyAndSpawnPiece(buyPieceName, positionIndex);
-				}
-				
-				// deselect when we're done
-				Pieces.deselectBuyPiece();
-			}
 			
 			if(selectedPieceID)
 			{

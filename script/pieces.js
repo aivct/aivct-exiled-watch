@@ -2,10 +2,8 @@
 	"...the pieces are moving..."
 	
 	Like chess, a piece that can move and attack. 
-	
-	A piece shall compose of its individual soldiers.
-	TODO: overhaul attack and defense to be something more like SOW:TNS.
-			
+	A piece is an aggregation of its individual soldiers.
+				
 	NOTE:
 		Decompose:
 		KillerID ->
@@ -18,57 +16,26 @@
 			
 		dynarow: if a unit is wounded, automatically exchange with a fresh unit to the back in melee combat.
 		
-		stamina:
-			undead don't suffer from stamina problems, but are very weak.
-			greenskins/wildlings are like celts, using a lot of stamina and then becoming weak
-			human legions must manage stamina, but their tactics can conserve quite a bit of stamina.
-	
-	In later versions, a piece shall comprise of the soldiers/monsters drafted to fight.
-	Its attack/defense function is also relegated to an aggregation of individual functions.
-	This should really be renamed: formations.
-		
-	// perhaps we could outsource a few stats to weapons.
-	ie: 
-		"doppelsodner": {
-			"weapon": "greatsword"
-			"melee": 35,
-			"defense": 20,
-			"ranged": 0,
-		}
-		
-		"greatsword": {
-			"damage": 7,
-			"type": slash,
-		}
-	
-	
 	TODO:
-		// Add promotions (0.2.x);
-
 		// kill all the dead pieces which have no meaningful connection.
 		Pieces.prune();
-		// undeploy every unit for when that is needed.
-		Pieces.undeployAll();
-		
-		Separate AP into movement points and AP
-		High contrast colour scheme for units...
-		Change HP to FGII system: Total/Wounded/Dead.
 		
 		Flanking in melee 
-		Archers
+			-replaced by actual positioning instead.
+			-ie, you get to attack wounded units and reserve units.
 	
-	[0][1][2]|[2][1][0]
-	[3][4][5]|[5][4][3]
-	[6][7][8]|[8][7][6]
  */
 var Pieces = (function()
 {
 	const BASE_HIT_CHANCE_PERCENT = 35; 
 	const BASE_XP_PER_MOVE = 5; // how much a basic attack or defense will give in XP
+	
+	const MAX_AP = 2;
 	/*
 	const FORMATION_WIDTH = 4;
 	const FORMATION_HEIGHT = 3;	
 	 */
+	/*
 	var piecesStatistics = 
 	{
 		"spearman": {
@@ -208,7 +175,7 @@ var Pieces = (function()
 			"formationCount": 12,
 		},
 	};
-	
+	 */
 	// fields
 	var selectedPieceID = null;
 	var selectedBuyableName = null;
@@ -241,8 +208,8 @@ var Pieces = (function()
 			let piece = {};
 			// the piece has not been placed anywhere yet and so it is null
 			piece.position = null;
-			piece.AP = 5;
-			piece.movement = 0;
+			piece.AP = MAX_AP;
+			piece.movement = 3;
 			piece.maxMovement = 0;
 			
 			piece.isDead = false;
@@ -324,7 +291,17 @@ var Pieces = (function()
 		getPieceImageByID: function(pieceID)
 		{
 			// TODO: placeholder, to be replaced with dynamic sprites.
-			let image = Assets.getImage("spearman");
+			let team = Pieces.getPieceTeamByID(pieceID);
+			
+			let image;
+			if(team === 1)
+			{
+				image = Assets.getImage("spearman");
+			}
+			else if (team === 2)
+			{
+				image = Assets.getImage("undead_spearman");
+			}
 			return image;
 		},
 		
@@ -341,8 +318,7 @@ var Pieces = (function()
 		
 		getPieceMaxAPByID: function(pieceID)
 		{
-			// TODO: temp placeholder
-			return 5;
+			return MAX_AP;
 		},
 		
 		getPieceMovementByID: function(pieceID)
@@ -358,44 +334,6 @@ var Pieces = (function()
 		getPieceMovementRangeByID: function(pieceID)
 		{
 			return Pieces.getPieceMovementByID(pieceID);
-		},
-		
-		getPieceXPByID: function(pieceID)
-		{
-			return Game.getIDObjectProperty("pieces", pieceID, "XP");
-		},
-		
-		// XP formula: 100, 150, 200, 250, 300
-		// >, >>, >>>, |>>>, STAR
-		getPieceLevelByID: function(pieceID)
-		{
-			let XP = Pieces.getPieceXPByID(pieceID);
-			
-			// TODO: factor this out into its own function calculateLevelFromXP
-			let level = 0;
-			// naive, but hey, it works.
-			if(XP >  50) {XP -=  50; level++;}
-			if(XP > 100) {XP -= 100; level++;}
-			if(XP > 150) {XP -= 150; level++;}
-			if(XP > 200) {XP -= 200; level++;}
-			if(XP > 250) {XP -= 250; level++;}
-			if(XP > 300) {XP -= 300; level++;}
-			if(XP > 350) {XP -= 350; level++;}
-			if(XP > 400) {XP -= 400; level++;}
-			if(XP > 450) {XP -= 450; level++;}
-			if(XP > 500) {XP -= 500; level++;}
-			
-			return level;
-		},
-		
-		getPieceOnKillXPByID: function(pieceID)
-		{
-			let baseXP = Pieces.getPieceTypePropertyByID(pieceID, "onKillXP");
-			// level multiplier
-			let level = Pieces.getPieceLevelByID(pieceID);
-			
-			let killXP = (level + 1) * baseXP;
-			return killXP;
 		},
 		
 		getPieceTeamByID: function(pieceID)
@@ -419,51 +357,6 @@ var Pieces = (function()
 			let soldiers = Game.getIDObjectProperty("pieces", pieceID, "soldiers");
 			return soldiers.length;
 		},
-		
-		/*
-			A generalized series of functions for looking up the property of a specific object by name.
-				null tolerant, and DOES NOT warn you if the property is valid or missing; 
-				care must be taking at the other end for seeing if the property given is valid.
-			
-			If the return is "null", that's a VALID value. "undefined" is the error code you're looking for.
-		 */
-		getPieceTypePropertyByID: function(pieceID, propertyName)
-		{
-			let piece = Pieces.getPiece(pieceID);
-			return Pieces.getPieceTypePropertyByObject(piece, propertyName);
-		},
-		
-		getPieceTypePropertyByObject: function(piece, propertyName)
-		{
-			let typeName = piece?.typeName;
-			return Pieces.getPieceTypePropertyByName(typeName, propertyName);
-		},
-		
-		getPieceTypePropertyByName: function(typeName, propertyName)
-		{
-			let type = piecesStatistics[typeName];
-			if(!type) return;
-			return type[propertyName];
-		},
-		/*
-		getBuyablePieces: function()
-		{
-			let buyablePieces = [];
-			
-			let type;
-			for(let typeName in piecesStatistics)
-			{
-				type = piecesStatistics[typeName];
-				
-				if(type.buyable)
-				{
-					buyablePieces.push(type);
-				}
-			}
-			
-			return buyablePieces;
-		},
-		*/
 		
 		getSoldierByPosition: function(pieceID, position)
 		{
@@ -568,10 +461,21 @@ var Pieces = (function()
 			return minMovement;
 		},
 		
+		/**
+			Should really be renamed setPiecePositionByID.
+			
+			This is a safe function to set a piece's position.
+				It does all the necessary housecleaning and removing convenience references.
+			
+			To undeploy, simply set newPosition as null.
+			
+			@param pieceID - the position of the piece 
+			@param newPosition - an integer index of the tile position, or null if undeployed
+		 */
 		movePieceByID: function(pieceID, newPosition)
 		{
 			// check if new position is occupied
-			if(Board.isTilePieceOccupiedIndex(newPosition))
+			if(newPosition !== null && Board.isTilePieceOccupiedIndex(newPosition))
 			{
 				console.warn(`Pieces.movePieceByID: cannot move piece "${pieceID}" newPosition "${newPosition}" is already occupied!`);
 				return;
@@ -584,8 +488,12 @@ var Pieces = (function()
 				Board.setTilePieceOccupiedIndex(oldPosition, null);
 			}
 			Game.setIDObjectProperty("pieces",pieceID,"position",newPosition);
-			Board.setTilePieceOccupiedIndex(newPosition, pieceID);
 			
+			// this is intended behaviour. if newPosition is undefined, that is an INVALID invalid value, and we will have appropriate warning.
+			if(newPosition !== null)
+			{
+				Board.setTilePieceOccupiedIndex(newPosition, pieceID);
+			}
 			// set update flag because of a significant change
 			GUI.updateUnits();
 		},
@@ -696,27 +604,6 @@ var Pieces = (function()
 		},
 		 */
 		 /*
-		addXP: function(pieceID, value)
-		{
-			if(!(value > 0)) 
-			{
-				console.warn(`Pieces.addXP: invalid amount "${value}".`);
-				return;
-			}
-			
-			let XP = Game.getIDObjectProperty("pieces",pieceID,"XP");
-			let newXP = XP + value;
-			// TODO: onLevelUp
-			Game.setIDObjectProperty("pieces",pieceID,"XP",newXP);
-			
-			// set update flag because of a significant change
-			GUI.updateUnits();
-			// register metrics
-			let team = Pieces.getPieceTeamByID(pieceID);
-			if(team === 1) Metrics.addMetric("xp_earned", value);
-		},
-		 */
-		 /*
 		fullHealPiece: function(pieceID)
 		{
 			let maxHP = Pieces.getPieceMaxHPByID(pieceID);
@@ -728,18 +615,11 @@ var Pieces = (function()
 		},
 		 */
 		attackPiece: function(attackerID, defenderID)
-		{			
-			// get attack and defense
-			/*
-			let attack = Pieces.getPieceAttackByID(attackerID);
-			let defense = Pieces.getPieceDefenseByID(defenderID);
-			let weaponDamage = Pieces.getPieceAttackDamageByID(attackerID);
-			let armor = Pieces.getPieceArmorByID(defenderID);
-			 */
-			 
+		{		
+			// delegate to individual soldiers
 			let attackerSoldiers = Game.getIDObjectProperty("pieces", attackerID, "soldiers");
 			let defenderSoldiers = Game.getIDObjectProperty("pieces", defenderID, "soldiers");
-			
+			// right now it's a random mashup.
 			for(var soldierIndex = 0; soldierIndex < attackerSoldiers.length; soldierIndex++)
 			{
 				let attackerSoldierID = attackerSoldiers[soldierIndex];
@@ -747,12 +627,6 @@ var Pieces = (function()
 				
 				Soldiers.attackSoldier(attackerSoldierID, defenderSoldierID);
 			}
-			/*
-			// add some XP for the attack itself.
-			// add some XP for the defender as well.
-			Pieces.addXP(attackerID, BASE_XP_PER_MOVE);
-			Pieces.addXP(defenderID, BASE_XP_PER_MOVE);
-			 */
 			GUI.updateUnits();
 		},
 		
@@ -784,6 +658,22 @@ var Pieces = (function()
 			}
 			
 			return Game.setIDObjectProperty("pieces", pieceID, "movement", newMovement);
+		},
+		
+		// clean the board.
+		undeployPieceByID: function(pieceID)
+		{
+			Pieces.movePieceByID(pieceID, null);
+		},
+		
+		undeployAllPieces: function()
+		{
+			let pieces = Pieces.getLivingPiecesID();
+			for(let index = 0; index < pieces.length; index++)
+			{
+				let pieceID = pieces[index];
+				Pieces.undeployPieceByID(pieceID);
+			}
 		},
 		
 		// centralize it here for better metric management.
@@ -883,6 +773,7 @@ var Pieces = (function()
 			return validTargetsID;
 		},
 		
+		// straight line
 		getValidSpawnPositions: function(team = 1)
 		{
 			let validPositions = [];
@@ -911,132 +802,8 @@ var Pieces = (function()
 			
 			return validPositions;
 		},
-		
-		/* Buying */
-		buyAndSpawnPiece: function(typeName, position)
-		{
-			// first, see if tilePosition is valid. it pays to be paranoid, especially since this is UI facing.
-			if(!Board.isTileValidDestinationByIndex(position))
-			{
-				console.warn(`Pieces.buyAndSpawnPiece: position "${position}" already occupied!`);
-				return;
-			}
-			// double check that typeName exists 
-			if(!piecesStatistics[typeName]) 
-			{
-				console.warn(`Pieces.buyAndSpawnPiece: typeName "${typeName}" not found.`);
-				return;
-			}
-			// TODO: check and deduct money here.
-			
-			// now, create and spawn.
-			let createPiece = () => { return Pieces.createPiece(typeName,1) };
-			
-			Game.createNewIDObject("pieces", createPiece);
-			Pieces.movePieceByID(Game.getState("ID","pieces"), position);
-			
-			// this should ONLY be used by the player, so we can always add it as a metric.
-			// TODO: add metric for money
-		},
-		
-		/*
-			GUI and UI related
-		 */
-		getSelectedPiece: function()
-		{
-			return selectedPieceID;
-		},			
-		 
-		selectPiece: function(pieceID)
-		{
-			// cannot select dead pieces 
-			if(Pieces.isPieceDeadByID(pieceID)) return;
-			Pieces.deselectBuyPiece();
-			selectedPieceID = pieceID;
-			GUI.updateUI();
-		},
-		
-		deselectPiece: function()
-		{
-			selectedPieceID = null;
-			GUI.updateUI();
-		},
-		
-		getSelectedBuyPiece: function()
-		{
-			return selectedBuyableName;
-		},
-		
-		setSelectedBuyPiece: function(name)
-		{
-			Pieces.deselectAllSelected();
-			selectedBuyableName = name;
-			GUI.updateUI();
-		},
-		
-		deselectBuyPiece: function()
-		{
-			selectedBuyableName = null;
-			GUI.updateUI();
-		},
-		
-		deselectAllSelected: function()
-		{
-			Pieces.deselectPiece();
-			Pieces.deselectBuyPiece();
-			Abilities.deselectAbility();
-		},
-		
-		/*
-			Spawning
-		 */
-		/*
-		// spawn randomly on the left
-		spawnAlly: function()
-		{
-			// find unoccupied tile location 
-			var mapWidth = Board.getMapWidth();
-			var mapHeight = Board.getMapHeight();
-			
-			// naive, if we don't find a tile on first path, then do nothing.
-			let x = 0;
-			let y = randomInteger(0, mapHeight - 1);
-			
-			let index = Board.calculateIndexFromCartesian(x,y);
-			if(Board.isTilePieceOccupiedIndex(index)) return;
-			
-			let createAlly = () => 
-				{
-					let types = ["spearman","pikeman","swordsman","horseman"];
-					return Pieces.createPiece(randomElementInArray(types),1)
-				};
-			Game.createNewIDObject("pieces", createAlly);
-			Pieces.movePieceByID(Game.getState("ID","pieces"), index);
-		},
-		 
-		// spawn randomly on the right
-		spawnEnemy: function()
-		{
-			// find unoccupied tile location 
-			var mapWidth = Board.getMapWidth();
-			var mapHeight = Board.getMapHeight();
-			
-			// naive, if we don't find a tile on first path, then do nothing.
-			let x = mapWidth - 1;
-			let y = randomInteger(0, mapHeight - 1);
-			
-			let index = Board.calculateIndexFromCartesian(x,y);
-			if(Board.isTilePieceOccupiedIndex(index)) return;
-			
-			let createEnemySpearman = () => {return Pieces.createPiece("undead_spearman",2)};
-			Game.createNewIDObject("pieces", createEnemySpearman);
-			Pieces.movePieceByID(Game.getState("ID","pieces"), index);
-		},
-		 */
-		 
-		/* 
-			End Turn
-		 */	
+				 
+		/* End Turn */	
 		endTurn: function()
 		{
 			// go through every piece which is alive and restore AP.
@@ -1136,5 +903,33 @@ var Pieces = (function()
 			Pieces.AITurn(1);Pieces.AITurn(2);Pieces.endTurn();
 		},
 		 */
+		 
+		/*
+			GUI and UI related
+		 */
+		getSelectedPiece: function()
+		{
+			return selectedPieceID;
+		},			
+		 
+		selectPiece: function(pieceID)
+		{
+			// cannot select dead pieces 
+			if(Pieces.isPieceDeadByID(pieceID)) return;
+			selectedPieceID = pieceID;
+			GUI.updateUI();
+		},
+		
+		deselectPiece: function()
+		{
+			selectedPieceID = null;
+			GUI.updateUI();
+		},
+		
+		deselectAllSelected: function()
+		{
+			Pieces.deselectPiece();
+			Abilities.deselectAbility();
+		},
 	}
 })();
