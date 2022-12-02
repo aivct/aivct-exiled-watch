@@ -407,23 +407,37 @@ var GUI = (function()
 			// draw depending on its HP, most likely temp for now
 			let ID = unit?.ID;
 			if(!ID) return;
-			let sprite = Pieces.getPieceImageByID(ID);
-			if(!sprite) return;
 			//let drawSettings = Pieces.getPieceTypePropertyByID(ID, "drawSettings");
-			let spritesToDraw = Pieces.getPieceSoldierCountByID(ID);
+			
+			// draw underlying base for unit cause I'm too lazy to write a recolor function right now.
+			let team = unit?.team;
+			let teamColour = "blue";
+			if(team === 2)
+			{
+				teamColour = "#fe01d4";
+			}
+			context.fillStyle = teamColour;
+			context.beginPath();
+			context.fillRect(canvasPosition.x+2, canvasPosition.y+2, tileSize-4, tileSize-4);
+			
+			let spritesToDraw = Pieces.getPieceSoldierSpritesByID(ID);
 			let width = 6;
 			let height = 6;
 			let rowWidth = 4;
 			let marginX = 3;
 			let marginY = 3;
 			let rowOddX = 1;
-			for(let index = 0; index < spritesToDraw; index++)
+			
+			for(let index = 0; index < spritesToDraw.length; index++)
 			{
 				let rowCount = Math.floor(index / rowWidth);
 				if(rowCount === 0) context.globalAlpha = 1;
 				if(rowCount === 1) context.globalAlpha = 0.66;
 				if(rowCount === 2) context.globalAlpha = 0.50;
 				if(rowCount === 3) context.globalAlpha = 0.33;
+				
+				let sprite = spritesToDraw[index];
+				if(!sprite) continue;
 				
 				sprite.draw(context
 					, canvasPosition.x + tileSize - marginX - width * (index % rowWidth) * sizeMultiplier - (sprite.getWidth() * sizeMultiplier) - ((rowCount % 2) * rowOddX * sizeMultiplier)
@@ -605,6 +619,7 @@ var GUI = (function()
 		},
 		
 		// not the big UI, but in game UI (ie highlighting selected and valid tiles)
+		// we can be really wasteful here, since it's UI that's VERY rarely updated.
 		drawUI: function(context, canvas)
 		{
 			context.clearRect(0,0,canvas.width,canvas.height);
@@ -623,18 +638,23 @@ var GUI = (function()
 				GUI.drawHighlightedTile(context, selectedPiecePosition);
 				
 				let abilityName = Abilities.getSelectedAbility();
+				// draw attack map but ONLY if there is AP left
+				let selectedPieceAP = Pieces.getPieceAPByID(selectedPieceID);
+				let validTargetsID;
 				switch(abilityName)
 				{
+					case "ability_ranged_attack":
+						let selectedPieceRange = Pieces.getPieceMaxRangeByID(selectedPieceID);
+						if(abilityName === "ability_ranged_attack")validTargetsID = Pieces.getValidTargetsID(selectedPieceID, selectedPieceRange, "attack");
 					case "ability_melee_attack":
-						// draw attack map but ONLY if there is AP left
-						let selectedPieceAP = Pieces.getPieceAPByID(selectedPieceID);
+						if(abilityName === "ability_melee_attack") validTargetsID = Pieces.getValidTargetsID(selectedPieceID, 1, "attack");
 						if(selectedPieceAP > 0)
 						{
-							let validMeleeTargetsID = Pieces.getValidTargetsID(selectedPieceID, 1, "attack");
+							
 							context.strokeStyle = "red";
-							for(let targetCount = 0; targetCount < validMeleeTargetsID.length; targetCount++)
+							for(let targetCount = 0; targetCount < validTargetsID.length; targetCount++)
 							{
-								let targetID = validMeleeTargetsID[targetCount];
+								let targetID = validTargetsID[targetCount];
 								let targetPosition = Pieces.getPiecePositionByID(targetID);
 								
 								GUI.drawHighlightedTile(context, targetPosition);
@@ -669,26 +689,28 @@ var GUI = (function()
 			{
 				switch(abilityName)
 				{
+					case "ability_ranged_attack":
+						if(pieceID)
+						{
+							Abilities.abilityRangedAttackPiece(selectedPieceID, pieceID);
+						}
+						break;
 					case "ability_melee_attack":
 						if(pieceID)
 						{
-							// assume it's attack
-							Abilities.abilityMeleeAttackPiece(selectedPieceID, pieceID);
-							
-							// deselect at the end of day
-							Pieces.deselectPiece();
-							Abilities.deselectAbility();
+							Abilities.abilityMeleeAttackPiece(selectedPieceID, pieceID);							
 						}
 						break;
 					case "ability_move":
 					default:
 						// else, assume it's movement
 						Abilities.abilityMovePiece(selectedPieceID, positionIndex);
-						// deselect at the end of day
-						Pieces.deselectPiece();
-						Abilities.deselectAbility();
 						break;
 				}
+				
+				// deselect at the end of day
+				Pieces.deselectPiece();
+				Abilities.deselectAbility();
 			}
 			else 
 			{
@@ -878,6 +900,9 @@ var GUI = (function()
 					break;
 				case "2":
 					Abilities.setSelectedAbility("ability_melee_attack");
+					break;
+				case "3":
+					Abilities.setSelectedAbility("ability_ranged_attack");
 					break;
 				default:
 					break;

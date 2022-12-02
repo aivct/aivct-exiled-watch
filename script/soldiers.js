@@ -13,17 +13,6 @@
 			-20 hits to kill is far too thick.
 	
 	-a single pool of HP, but different body parts have different armor and damage modifier
-	
-	Hitchance 
-	
-	Head 	= 0.20
-	//Neck	= 0.05
-	Chest 	= 0.40
-	Groin	= 0.20
-	Arms 	= 0.05
-	Legs 	= 0.05
-	//Hands 	= 0.03
-	//Feet 	= 0.02
 		
 	-this should emergently cause the player to rediscover the rules of armor, in terms of most protection per unit price.
 		-sauce: https://acoup.blog/2019/05/03/collections-armor-in-order-part-i/
@@ -35,8 +24,7 @@
 	But seriously, most of the time you're only going to care about head/chest protection, the rest is basically cosmetic.
 	
 	TODO: indicators for damage and a way for players to get more information about which armor sets work and which don't.
-			
-	TODO: Auto-retreat. If a soldier's HP is below X, then they will move to reserves.
+	
 	TODO: Names
 	TODO: Archers
 	
@@ -47,6 +35,11 @@
 			human legions must manage stamina, but their tactics can conserve quite a bit of stamina.
 	TODO:
 		unify body parts. redesign and finish design for body parts.
+	TODO:
+		lazy eval for armor, precalculate protection for various body parts
+	TODO:
+		Ungeneralize equipment and reduce to a simpler 6 point slot.
+	
  */
 var Soldiers = (function()
 {
@@ -55,6 +48,18 @@ var Soldiers = (function()
 	const DEFAULT_MAX_DAMAGE = 10;
 	const BASE_HIT_CHANCE_PERCENT = 35;
 	
+	/*
+		Hitchance:
+ 		
+		Head 	= 0.20
+		//Neck	= 0.05
+		Chest 	= 0.40
+		Groin	= 0.20
+		Arms 	= 0.05
+		Legs 	= 0.05
+		//Hands 	= 0.03
+		//Feet 	= 0.02
+	 */
 	const BODY_PARTS_HIT_CHANCE = {
 		"head": 5,
 		"chest": 12,
@@ -85,7 +90,7 @@ var Soldiers = (function()
 			NOTE: do not create it directly from here. This is a factory function.
 			Use Game.createNewIDObject instead!
 		 */
-		 
+		
 		// generic template.
 		createSoldier: function(team = 1)
 		{
@@ -100,7 +105,6 @@ var Soldiers = (function()
 			soldier.attack = 15;
 			soldier.defense = 10;
 			soldier.accuracy = 10;
-			soldier.armor = 2;
 			
 			soldier.isDead = false;
 			soldier.killedByID = null;
@@ -196,6 +200,7 @@ var Soldiers = (function()
 		{
 			// TODO: placeholder, to be replaced with dynamic sprites.
 			let image = Assets.getImage("spearman");
+			if(Soldiers.isSoldierRangedByID(soldierID)) return Assets.getImage("archer");
 			return image;
 		},
 		
@@ -269,16 +274,21 @@ var Soldiers = (function()
 			return damage;
 		},
 		
+		isSoldierRangedByID: function(soldierID)
+		{
+			let weaponKey = Soldiers.getSoldierWeaponKeyByID(soldierID);
+			return Equipment.isWeaponRangedByKey(weaponKey);
+		},
+		
 		getSoldierWeaponRangeByID: function(soldierID)
 		{
 			let weaponRange = 1;
+			if(Soldiers.isSoldierRangedByID(soldierID))
+			{
+				let weaponKey = Soldiers.getSoldierWeaponKeyByID(soldierID);
+				weaponRange = Equipment.getWeaponRangeByKey(weaponKey);
+			}
 			return weaponRange;
-		},
-		
-		getSoldierArmorByID: function(soldierID)
-		{
-			let armor = Game.getIDObjectProperty("soldiers", soldierID, "armor");
-			return armor;
 		},
 		
 		getSoldierArmorBodyPartByID: function(soldierID, bodyPart)
@@ -436,6 +446,7 @@ var Soldiers = (function()
 		{
 			let attack = Soldiers.getSoldierAttackByID(attackerID);
 			let defense = Soldiers.getSoldierDefenseByID(defenderID);
+			
 			let weaponMinMaxDamage = Soldiers.getSoldierWeaponMinMaxDamageByID(attackerID);
 			
 			let diceRoll = randomInteger(0, 99);
@@ -460,6 +471,36 @@ var Soldiers = (function()
 			}
 			
 			// TODO: XP
+		},
+		
+		attackRangedSoldier: function(attackerID, defenderID)
+		{
+			let attack = Soldiers.getSoldierAccuracyByID(attackerID);
+			let defense = Soldiers.getSoldierDefenseByID(defenderID);
+			
+			let weaponMinMaxDamage = Soldiers.getSoldierWeaponMinMaxDamageByID(attackerID);
+			
+			let diceRoll = randomInteger(0, 99);
+			let hitChance = BASE_HIT_CHANCE_PERCENT + attack - defense;
+			let weaponDamage = randomInteger(weaponMinMaxDamage.min, weaponMinMaxDamage.max);
+			
+			console.log(`RANGED ATTACK`);
+			if(diceRoll < hitChance)
+			{
+				let bodyPartHit = randomWeightedKey(BODY_PARTS_HIT_CHANCE);
+				let bodyPartDamageModifier = BODY_PARTS_DAMAGE_MODIFIER[bodyPartHit];
+				let armor = Soldiers.getSoldierArmorBodyPartByID(defenderID, bodyPartHit);
+				let damage = weaponDamage - armor;
+				if(damage < 0)
+				{
+					// min damage must be 1.
+					damage = MIN_DAMAGE;
+				}
+				damage = (damage) * bodyPartDamageModifier;
+				//console.log(`W:${weaponDamage}|M:${bodyPartDamageModifier}|A:${armor}|D:${damage}`);
+				Soldiers.damageSoldier(defenderID, damage, attackerID);
+				// TODO: particle effect
+			}
 		},
 		
 		onEndTurn: function()

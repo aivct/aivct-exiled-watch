@@ -17,12 +17,14 @@
 		dynarow: if a unit is wounded, automatically exchange with a fresh unit to the back in melee combat.
 		
 	TODO:
-		// kill all the dead pieces which have no meaningful connection.
+		// remove all the dead pieces which have no meaningful connection.
 		Pieces.prune();
 		
 		Flanking in melee 
 			-replaced by actual positioning instead.
 			-ie, you get to attack wounded units and reserve units.
+	
+	TODO: Auto-retreat. If a soldier's HP is below X, then they will move to reserves.
 	
  */
 var Pieces = (function()
@@ -43,6 +45,9 @@ var Pieces = (function()
 			
 			Pieces.createTestEnemy();
 			Pieces.movePieceByID(Game.getState("ID", "pieces"), Board.calculateIndexFromCartesian(1,2));
+			
+			Pieces.createTestHalfRanged();
+			Pieces.movePieceByID(Game.getState("ID", "pieces"), Board.calculateIndexFromCartesian(2,1));
 		},
 		
 		/*
@@ -104,6 +109,27 @@ var Pieces = (function()
 			}
 		},
 		
+		createTestHalfRanged: function()
+		{
+			Game.createNewIDObject("pieces", () => { return Pieces.createPiece(1) } );
+			
+			for(let index = 0; index < 6; index++)
+			{
+				Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+				Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
+				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "crossbow");
+				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "gambeson");
+			}
+			
+			for(let index = 0; index < 6; index++)
+			{
+				Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+				Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
+				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "simple_spear");
+				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "gambeson");
+			}
+		},
+		
 		createTestEnemy: function()
 		{
 			Game.createNewIDObject("pieces", () => { return Pieces.createPiece(2) } );
@@ -148,7 +174,7 @@ var Pieces = (function()
 			let livingPiecesID = (livingPieces).map(piece => {return piece.ID});
 			return livingPiecesID;
 		},
-		
+		/*
 		getPieceImageByID: function(pieceID)
 		{
 			// TODO: placeholder, to be replaced with dynamic sprites.
@@ -165,7 +191,7 @@ var Pieces = (function()
 			}
 			return image;
 		},
-		
+		 */
 		// returns in index form, beware
 		getPiecePositionByID: function(pieceID)
 		{
@@ -215,20 +241,44 @@ var Pieces = (function()
 		
 		getPieceSoldierCountByID: function(pieceID)
 		{
-			/*
-			let HPRatio = Pieces.getPieceHPByID(pieceID) / Pieces.getPieceMaxHPByID(pieceID);
-			let spriteCount = Pieces.getPieceTypePropertyByID(pieceID, "formationCount") * HPRatio;
-			// a half dead person is still alive.
-			spriteCount = Math.ceil(spriteCount);
-			 */
 			let soldiers = Game.getIDObjectProperty("pieces", pieceID, "soldiers");
 			return soldiers.length;
+		},
+		
+		// returns an array of Sprites (reference) for each soldier ie. [Sprite, Sprite]
+		getPieceSoldierSpritesByID: function(pieceID)
+		{
+			let soldiers = Game.getIDObjectProperty("pieces", pieceID, "soldiers");
+			let sprites = [];
+			for(let index = 0; index < soldiers.length; index++)
+			{
+				sprites.push(Soldiers.getSoldierImageByID(soldiers[index]));
+			}
+			return sprites;
 		},
 		
 		getSoldierByPosition: function(pieceID, position)
 		{
 			let soldiersPosition = Game.getIDObjectProperty("pieces", pieceID, "soldiersPosition");
 			return soldiersPosition[position];
+		},
+		
+		getPieceMaxRangeByID: function(pieceID)
+		{
+			// TODO: factor out, this should not be accessed directly
+			let soldiers = Game.getIDObjectProperty("pieces", pieceID, "soldiers");
+			let maxRange;
+			
+			for(let index = 0; index < soldiers.length; index++)
+			{
+				let soldierID = soldiers[index];
+				let range = Soldiers.getSoldierWeaponRangeByID(soldierID);
+				
+				if(maxRange === undefined) maxRange = range;
+				if(range > maxRange) maxRange = range;
+			}
+			
+			return maxRange;
 		},
 		
 		addSoldierByID: function(pieceID, soldierID)
@@ -482,7 +532,13 @@ var Pieces = (function()
 		},
 		 */
 		attackPiece: function(attackerID, defenderID)
-		{		
+		{
+			// check range.
+			let attackerPosition = Pieces.getPiecePositionByID(attackerID);
+			let defenderPosition = Pieces.getPiecePositionByID(defenderID);
+			
+			let distance = Board.calculateDistanceToTileByIndex(attackerPosition, defenderPosition);
+			
 			// delegate to individual soldiers
 			let attackerSoldiers = Game.getIDObjectProperty("pieces", attackerID, "soldiers");
 			let defenderSoldiers = Game.getIDObjectProperty("pieces", defenderID, "soldiers");
@@ -492,7 +548,17 @@ var Pieces = (function()
 				let attackerSoldierID = attackerSoldiers[soldierIndex];
 				let defenderSoldierID = randomElementInArray(defenderSoldiers);
 				
-				Soldiers.attackSoldier(attackerSoldierID, defenderSoldierID);
+				if(distance === 1)
+				{
+					Soldiers.attackSoldier(attackerSoldierID, defenderSoldierID);
+				}
+				else 
+				{
+					if(Soldiers.isSoldierRangedByID(attackerSoldierID))
+					{
+						Soldiers.attackRangedSoldier(attackerSoldierID, defenderSoldierID);
+					}
+				}
 			}
 			GUI.updateUnits();
 		},

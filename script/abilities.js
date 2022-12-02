@@ -31,6 +31,12 @@ var Abilities = (function()
 			"image": "ability_melee_attack",
 			"AP": 1,
 		},
+		
+		"ability_ranged_attack": {
+			"abilityName": "ability_ranged_attack",
+			"image": "ability_ranged_attack",
+			"AP": 1,
+		},
 	}
 	
 	var selectedAbilityName = null;
@@ -50,7 +56,6 @@ var Abilities = (function()
 			API for abilities:
 				(pieceID, tilePosition)
 		 */
-		
 		abilityMovePiece: function(pieceID, destinationPosition)
 		{
 			let AP = Pieces.getPieceAPByID(pieceID);
@@ -81,6 +86,29 @@ var Abilities = (function()
 			if(APCost > AP) return; // JIC 
 			Pieces.spendPieceAP(attackerID, APCost);
 			// now actually attack
+			Pieces.attackPiece(attackerID, defenderID);
+		},
+		
+		abilityRangedAttackPiece: function(attackerID, defenderID)
+		{
+			// you can't attack yourself!
+			if(attackerID === defenderID) return;
+			// or your friends!
+			if(Pieces.getPieceTeamByID(attackerID) === Pieces.getPieceTeamByID(defenderID)) return;
+			
+			let attackerPosition = Pieces.getPiecePositionByID(attackerID);
+			let defenderPosition = Pieces.getPiecePositionByID(defenderID);
+			
+			let distance = Board.calculateDistanceToTileByIndex(attackerPosition, defenderPosition);
+			let weaponRange = Pieces.getPieceMaxRangeByID(attackerID);
+			
+			// if we can't reach, don't waste the AP!
+			if(distance > weaponRange) return;
+			
+			let AP = Pieces.getPieceAPByID(attackerID);
+			let APCost = 1;
+			if(APCost > AP) return;
+			// delegate attack to Pieces to check if each individual soldier can reach.
 			Pieces.attackPiece(attackerID, defenderID);
 		},
 		

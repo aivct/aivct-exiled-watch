@@ -1,4 +1,4 @@
-const VERSION = "0.2.3"; 
+const VERSION = "0.2.4"; 
 // basic init functions
 function initialize()
 {
@@ -24,6 +24,10 @@ var Assets = (function()
 	var imagesToLoad = {
 		"spearman": {
 			"src": "./assets/spearman.png",
+			"type": "sprite",
+		},
+		"archer": {
+			"src": "./assets/archer.png",
 			"type": "sprite",
 		},
 		"pikeman": {

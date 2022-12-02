@@ -81,6 +81,17 @@ var Equipment = (function()
 			"min_damage": 25,
 			"max_damage": 30,
 		},
+		
+		"crossbow": {
+			"type": "weapon",
+			"isRanged": true,
+			"weight": 8,
+			"range": 4,
+			"damage_type": "pierce",
+			"min_damage": 40,
+			"max_damage": 50,
+			"accuracy_bonus": 10,
+		},
 	}
 	
 	var ArmorTypesStatistics = {
@@ -132,6 +143,24 @@ var Equipment = (function()
 		getEquipmentArmorTypeByKey: function(equipmentKey)
 		{
 			return Equipment.getEquipmentStatisticByKey(equipmentKey, "armor_type");
+		},
+		
+		isWeaponRangedByKey: function(equipmentKey)
+		{
+			// undefined should NOT be a valid falsy value. so use an explicit false instead.
+			let isRanged = Equipment.getEquipmentStatisticByKey(equipmentKey, "isRanged");
+			if(isRanged === undefined) isRanged = false;
+			return isRanged;
+		},
+		
+		getWeaponRangeByKey: function(equipmentKey)
+		{
+			return Equipment.getEquipmentStatisticByKey(equipmentKey, "range");
+		},
+		
+		getWeaponAccuracyBonus: function(equipmentKey)
+		{
+			return Equipment.getEquipmentStatisticByKey(equipmentKey, "accuracy");
 		},
 		
 		getEquipmentMinDamageByKey: function(equipmentKey)
