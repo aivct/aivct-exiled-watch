@@ -108,6 +108,7 @@ var Abilities = (function()
 			let AP = Pieces.getPieceAPByID(attackerID);
 			let APCost = 1;
 			if(APCost > AP) return;
+			Pieces.spendPieceAP(attackerID, APCost);
 			// delegate attack to Pieces to check if each individual soldier can reach.
 			Pieces.attackPiece(attackerID, defenderID);
 		},

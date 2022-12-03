@@ -24,12 +24,9 @@
 	But seriously, most of the time you're only going to care about head/chest protection, the rest is basically cosmetic.
 	
 	TODO: indicators for damage and a way for players to get more information about which armor sets work and which don't.
-	
-	TODO: Names
-	TODO: Archers
-	
+		
 	TODO:
-	stamina:
+		stamina:
 			undead don't suffer from stamina problems, but are very weak.
 			greenskins/wildlings are like celts, using a lot of stamina and then becoming weak
 			human legions must manage stamina, but their tactics can conserve quite a bit of stamina.
@@ -39,6 +36,8 @@
 		lazy eval for armor, precalculate protection for various body parts
 	TODO:
 		Ungeneralize equipment and reduce to a simpler 6 point slot.
+	TODO: SoldierLogMessage
+
 	
  */
 var Soldiers = (function()
@@ -91,11 +90,20 @@ var Soldiers = (function()
 			Use Game.createNewIDObject instead!
 		 */
 		
-		// generic template.
+		// generic template. do NOT use this as is.
 		createSoldier: function(team = 1)
 		{
 			let soldier = {};
 			
+			/*
+				skeletons don't have names. 
+				goblins are named Gork and Mork,
+				humans have names like John and Ariel.
+				tis better for names to be delegated to specific constructors.
+			 */
+			soldier.name = null;
+			// same deal with gender, though there are different options: M, F, N, and N/A (null).
+			soldier.gender = null;
 			soldier.HP = 100;
 			soldier.maxHP = 100;
 			soldier.movement = 3;
@@ -136,7 +144,22 @@ var Soldiers = (function()
 		createSoldierVeteran: function()
 		{
 			let soldier = Soldiers.createSoldier();
-			
+			// TEMP: replace in preparation for battle nuns, this is testing for now
+			soldier.gender = randomElementInArray(["M","F","N"]);
+			let name;
+			if(soldier.gender === "M")
+			{
+				name = NameGenerator.generateHumanMaleName();
+			}
+			else if (soldier.gender === "F")
+			{
+				name = NameGenerator.generateHumanFemaleName();
+			}
+			else 
+			{
+				name = NameGenerator.generateHumanName();
+			}
+			soldier.name = name;
 			soldier.backstory = "veteran";
 			
 			return soldier;
@@ -194,6 +217,18 @@ var Soldiers = (function()
 			}
 			
 			return livingSoldiers;
+		},
+		
+		// note: null IS a valid value, and applies to skeletons.
+		getSoldierNameByID: function(soldierID)
+		{
+			return Game.getIDObjectProperty("soldiers", soldierID, "name");
+		},
+		
+		// ditto, null is a separate and DISTINCT value from N for enby.
+		getSoldierGenderByID: function(soldierID)
+		{
+			return Game.getIDObjectProperty("soldiers", soldierID, "gender");
 		},
 		
 		getSoldierImageByID: function(soldierID)
@@ -561,4 +596,27 @@ var Soldiers = (function()
 	}
 })();
 
-// TODO: SoldierLogMessage
+var NameGenerator = (function()
+{
+	var humanMaleNames = ["James", "Robert", "John", "Michael", "David", "William", "Richard", "Joseph", "Thomas", "Charles"];
+	var humanFemaleNames = ["Mary", "Patricia", "Jennifer", "Linda", "Elizabeth", "Barbara", "Susan", "Jessica", "Sarah", "Karen"];
+	var humanNames = humanMaleNames.concat(humanFemaleNames);
+	
+	return {
+		// returns ONE name. last names are for nobles.
+		generateHumanName: function()
+		{
+			return randomElementInArray(humanNames);
+		},
+		
+		generateHumanMaleName: function()
+		{
+			return randomElementInArray(humanMaleNames);
+		},
+		
+		generateHumanFemaleName: function()
+		{
+			return randomElementInArray(humanFemaleNames);
+		},
+	}
+})();

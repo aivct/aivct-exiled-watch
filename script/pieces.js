@@ -136,7 +136,7 @@ var Pieces = (function()
 			
 			for(let index = 0; index < 6; index++)
 			{
-				Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+				Game.createNewIDObject("soldiers", Soldiers.createSoldierUndead);
 				Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
 				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "shortsword");
 			}
