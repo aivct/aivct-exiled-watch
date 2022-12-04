@@ -645,6 +645,8 @@ var GUI = (function()
 				{
 					case "ability_ranged_attack":
 						let selectedPieceRange = Pieces.getPieceMaxRangeByID(selectedPieceID);
+						let isRanged = Pieces.isPieceRangedByID(selectedPieceID);
+						if(!isRanged) break;
 						if(abilityName === "ability_ranged_attack")validTargetsID = Pieces.getValidTargetsID(selectedPieceID, selectedPieceRange, "attack");
 					case "ability_melee_attack":
 						if(abilityName === "ability_melee_attack") validTargetsID = Pieces.getValidTargetsID(selectedPieceID, 1, "attack");

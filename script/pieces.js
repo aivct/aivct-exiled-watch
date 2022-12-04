@@ -25,7 +25,7 @@
 			-ie, you get to attack wounded units and reserve units.
 	
 	TODO: Auto-retreat. If a soldier's HP is below X, then they will move to reserves.
-	
+	TODO: fix recalculating PIECE convenient stats when adding equipment to a SOLDIER
  */
 var Pieces = (function()
 {
@@ -48,6 +48,12 @@ var Pieces = (function()
 			
 			Pieces.createTestHalfRanged();
 			Pieces.movePieceByID(Game.getState("ID", "pieces"), Board.calculateIndexFromCartesian(2,1));
+			
+			Pieces.createTestHalfMounted();
+			Pieces.movePieceByID(Game.getState("ID", "pieces"), Board.calculateIndexFromCartesian(3,1));
+			
+			Pieces.createTestMounted();
+			Pieces.movePieceByID(Game.getState("ID", "pieces"), Board.calculateIndexFromCartesian(4,1));
 		},
 		
 		/*
@@ -69,7 +75,7 @@ var Pieces = (function()
 			// the piece has not been placed anywhere yet and so it is null
 			piece.position = null;
 			piece.AP = MAX_AP;
-			piece.movement = 3;
+			piece.movement = 1;
 			piece.maxMovement = 0;
 			
 			piece.isDead = false;
@@ -128,6 +134,41 @@ var Pieces = (function()
 				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "simple_spear");
 				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "gambeson");
 			}
+		},
+		
+		createTestMounted: function()
+		{
+			Game.createNewIDObject("pieces", () => { return Pieces.createPiece(1) } );
+			
+			for(let index = 0; index < 6; index++)
+			{
+				Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "pony");
+				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "gambeson");
+				Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
+			}
+		},
+		
+		createTestHalfMounted: function()
+		{
+			Game.createNewIDObject("pieces", () => { return Pieces.createPiece(1) } );
+			
+			for(let index = 0; index < 6; index++)
+			{
+				Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+				Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
+				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "simple_spear");
+				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "gambeson");
+			}
+			
+			for(let index = 0; index < 6; index++)
+			{
+				Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
+				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "pony");
+				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "gambeson");
+				Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
+			}
+			
 		},
 		
 		createTestEnemy: function()
@@ -378,6 +419,18 @@ var Pieces = (function()
 			return minMovement;
 		},
 		
+		// not lazy eval
+		isPieceRangedByID: function(pieceID)
+		{
+			let soldiers = Game.getIDObjectProperty("pieces", pieceID, "soldiers");
+			for(let index = 0; index < soldiers.length; index++)
+			{
+				let soldierID = soldiers[index];
+				if(Soldiers.isSoldierRangedByID(soldierID)) return true;
+			}
+			return false;
+		},
+		
 		/**
 			Should really be renamed setPiecePositionByID.
 			
@@ -548,6 +601,7 @@ var Pieces = (function()
 				let attackerSoldierID = attackerSoldiers[soldierIndex];
 				let defenderSoldierID = randomElementInArray(defenderSoldiers);
 				
+				// TODO: fix. it introduces weird bugs with melee ranged attacks.
 				if(distance === 1)
 				{
 					Soldiers.attackSoldier(attackerSoldierID, defenderSoldierID);
@@ -864,5 +918,15 @@ var Pieces = (function()
 			Pieces.deselectPiece();
 			Abilities.deselectAbility();
 		},
+	}
+})();
+
+/*
+	"...The great battle in our own time." — Gandalf the White
+ */
+var Scenarios = (function()
+{
+	return {
+		
 	}
 })();

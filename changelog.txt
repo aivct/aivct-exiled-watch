@@ -1,3 +1,8 @@
+0.2.6
+-added mounts and rebalanced movement.
+	-infantry now moves much less.
+	-any soldier with a mount is now mounted.
+-fixed a weird bug where you could attack ranged in melee, even if you were not ranged!
 0.2.5
 -added names
 	-added name generator with initial seed of human western names

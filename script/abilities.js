@@ -95,6 +95,8 @@ var Abilities = (function()
 			if(attackerID === defenderID) return;
 			// or your friends!
 			if(Pieces.getPieceTeamByID(attackerID) === Pieces.getPieceTeamByID(defenderID)) return;
+			// and if you can't attack at range... don't do it!
+			if(!Pieces.isPieceRangedByID(attackerID)) return;
 			
 			let attackerPosition = Pieces.getPiecePositionByID(attackerID);
 			let defenderPosition = Pieces.getPiecePositionByID(defenderID);
@@ -134,8 +136,3 @@ var Abilities = (function()
 		},
 	}
 })();
-
-/*
-	"...The great battle in our own time." — Gandalf the White
- */
- // scenarios probably.

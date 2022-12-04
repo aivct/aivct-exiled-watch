@@ -46,6 +46,7 @@ var Soldiers = (function()
 	const DEFAULT_MIN_DAMAGE = 5;
 	const DEFAULT_MAX_DAMAGE = 10;
 	const BASE_HIT_CHANCE_PERCENT = 35;
+	const BASE_MOVEMENT = 2;
 	
 	/*
 		Hitchance:
@@ -106,7 +107,6 @@ var Soldiers = (function()
 			soldier.gender = null;
 			soldier.HP = 100;
 			soldier.maxHP = 100;
-			soldier.movement = 3;
 			soldier.fatigue = 0;
 			
 			// TEMP
@@ -236,6 +236,7 @@ var Soldiers = (function()
 			// TODO: placeholder, to be replaced with dynamic sprites.
 			let image = Assets.getImage("spearman");
 			if(Soldiers.isSoldierRangedByID(soldierID)) return Assets.getImage("archer");
+			if(Soldiers.isSoldierMountedByID(soldierID)) return Assets.getImage("horseman");
 			return image;
 		},
 		
@@ -264,13 +265,12 @@ var Soldiers = (function()
 		
 		getSoldierMovementByID: function(soldierID)
 		{
-			return Game.getIDObjectProperty("soldiers", soldierID, "movement");
-		},
-		
-		getSoldierMaxMovementByID: function(soldierID)
-		{
-			let maxMovement = Game.getIDObjectProperty("soldiers", soldierID, "maxMovement");
-			return maxMovement;
+			let mount = Soldiers.getSoldierMountKeyByID(soldierID);
+			if(mount)
+			{
+				return Equipment.getMountMovementByKey(mount);
+			}
+			return BASE_MOVEMENT;
 		},
 		
 		getSoldierFatigueByID: function(soldierID)
@@ -312,7 +312,15 @@ var Soldiers = (function()
 		isSoldierRangedByID: function(soldierID)
 		{
 			let weaponKey = Soldiers.getSoldierWeaponKeyByID(soldierID);
+			if(!weaponKey) return false;
 			return Equipment.isWeaponRangedByKey(weaponKey);
+		},
+		
+		isSoldierMountedByID: function(soldierID)
+		{
+			let mountKey = Soldiers.getSoldierMountKeyByID(soldierID);
+			if(mountKey) return true;
+			return false;
 		},
 		
 		getSoldierWeaponRangeByID: function(soldierID)
@@ -366,14 +374,28 @@ var Soldiers = (function()
 			return false;
 		},
 		
-		// get the first weapon.
 		getSoldierWeaponKeyByID: function(soldierID)
 		{
+			// get the first weapon. temp until redesign.
 			let equipmentKeys = Game.getIDObjectProperty("soldiers", soldierID, "equipment");
 			for(let index = 0; index < equipmentKeys.length; index++)
 			{
 				let equipmentKey = equipmentKeys[index];
 				if(Equipment.getEquipmentTypeByKey(equipmentKey) === "weapon")
+				{
+					return equipmentKey;
+				}
+			}
+		},
+		
+		getSoldierMountKeyByID: function(soldierID)
+		{
+			// ditto except for mounts
+			let equipmentKeys = Game.getIDObjectProperty("soldiers", soldierID, "equipment");
+			for(let index = 0; index < equipmentKeys.length; index++)
+			{
+				let equipmentKey = equipmentKeys[index];
+				if(Equipment.getEquipmentTypeByKey(equipmentKey) === "mount")
 				{
 					return equipmentKey;
 				}

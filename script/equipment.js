@@ -92,6 +92,19 @@ var Equipment = (function()
 			"max_damage": 50,
 			"accuracy_bonus": 10,
 		},
+		
+		/* Mounts */
+		"pony": {
+			"type": "mount",
+			"weight": 0, // we'll need to further refine the weight system. it should be negative (but also not)
+			"movement": 5, // clamp movement to THIS instead, minus penalities of course
+		},
+		
+		"horse": {
+			"type": "mount",
+			"weight": 0, 
+			"movement": 6, 
+		},
 	}
 	
 	var ArmorTypesStatistics = {
@@ -161,6 +174,11 @@ var Equipment = (function()
 		getWeaponAccuracyBonus: function(equipmentKey)
 		{
 			return Equipment.getEquipmentStatisticByKey(equipmentKey, "accuracy");
+		},
+		
+		getMountMovementByKey: function(equipmentKey)
+		{
+			return Equipment.getEquipmentStatisticByKey(equipmentKey, "movement");
 		},
 		
 		getEquipmentMinDamageByKey: function(equipmentKey)
