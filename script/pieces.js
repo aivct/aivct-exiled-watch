@@ -23,6 +23,7 @@
 		Flanking in melee 
 			-replaced by actual positioning instead.
 			-ie, you get to attack wounded units and reserve units.
+		// TODO: getValidMeleeTargets and getValidRangedTargets
 	
 	TODO: Auto-retreat. If a soldier's HP is below X, then they will move to reserves.
 	TODO: fix recalculating PIECE convenient stats when adding equipment to a SOLDIER
@@ -39,21 +40,8 @@ var Pieces = (function()
 	
 	return {
 		newGame: function()
-		{			
-			Pieces.createTestSpearmen();
-			Pieces.movePieceByID(Game.getState("ID", "pieces"), Board.calculateIndexFromCartesian(1,1));
-			
-			Pieces.createTestEnemy();
-			Pieces.movePieceByID(Game.getState("ID", "pieces"), Board.calculateIndexFromCartesian(1,2));
-			
-			Pieces.createTestHalfRanged();
-			Pieces.movePieceByID(Game.getState("ID", "pieces"), Board.calculateIndexFromCartesian(2,1));
-			
-			Pieces.createTestHalfMounted();
-			Pieces.movePieceByID(Game.getState("ID", "pieces"), Board.calculateIndexFromCartesian(3,1));
-			
-			Pieces.createTestMounted();
-			Pieces.movePieceByID(Game.getState("ID", "pieces"), Board.calculateIndexFromCartesian(4,1));
+		{
+			Scenarios.createScenarioBattle();
 		},
 		
 		/*
@@ -98,89 +86,6 @@ var Pieces = (function()
 			piece.totalDamageHealed = 0;
 			piece.totalTilesMoved = 0;
 			return piece;
-		},
-		
-		// specialized factories 
-		createTestSpearmen: function()
-		{
-			Game.createNewIDObject("pieces", () => { return Pieces.createPiece(1) } );
-			
-			for(let index = 0; index < 6; index++)
-			{
-				Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
-				Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
-				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "simple_spear");
-				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "gambeson");
-				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "mail_shirt");
-			}
-		},
-		
-		createTestHalfRanged: function()
-		{
-			Game.createNewIDObject("pieces", () => { return Pieces.createPiece(1) } );
-			
-			for(let index = 0; index < 6; index++)
-			{
-				Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
-				Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
-				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "crossbow");
-				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "gambeson");
-			}
-			
-			for(let index = 0; index < 6; index++)
-			{
-				Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
-				Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
-				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "simple_spear");
-				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "gambeson");
-			}
-		},
-		
-		createTestMounted: function()
-		{
-			Game.createNewIDObject("pieces", () => { return Pieces.createPiece(1) } );
-			
-			for(let index = 0; index < 6; index++)
-			{
-				Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
-				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "pony");
-				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "gambeson");
-				Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
-			}
-		},
-		
-		createTestHalfMounted: function()
-		{
-			Game.createNewIDObject("pieces", () => { return Pieces.createPiece(1) } );
-			
-			for(let index = 0; index < 6; index++)
-			{
-				Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
-				Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
-				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "simple_spear");
-				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "gambeson");
-			}
-			
-			for(let index = 0; index < 6; index++)
-			{
-				Game.createNewIDObject("soldiers", Soldiers.createSoldierVeteran);
-				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "pony");
-				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "gambeson");
-				Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
-			}
-			
-		},
-		
-		createTestEnemy: function()
-		{
-			Game.createNewIDObject("pieces", () => { return Pieces.createPiece(2) } );
-			
-			for(let index = 0; index < 6; index++)
-			{
-				Game.createNewIDObject("soldiers", Soldiers.createSoldierUndead);
-				Pieces.addSoldierByID(Game.getState("ID", "pieces"), Game.getState("ID", "soldiers"));
-				Soldiers.addSoldierEquipment(Game.getState("ID", "soldiers"), "shortsword");
-			}
 		},
 		
 		getPieceByID: function(pieceID)
@@ -359,7 +264,9 @@ var Pieces = (function()
 			 */
 			soldiers.push(soldierID);
 			
-			Pieces.recalculatePieceMovementByID(pieceID);
+			// only reset new movement when ADDING soldiers
+			let newMovement = Pieces.recalculatePieceMovementByID(pieceID);
+			Game.setIDObjectProperty("pieces", pieceID, "movement", newMovement);
 		},
 		
 		removeSoldierByID: function(pieceID, soldierID)
@@ -918,15 +825,5 @@ var Pieces = (function()
 			Pieces.deselectPiece();
 			Abilities.deselectAbility();
 		},
-	}
-})();
-
-/*
-	"...The great battle in our own time." — Gandalf the White
- */
-var Scenarios = (function()
-{
-	return {
-		
 	}
 })();

@@ -131,6 +131,8 @@ var Equipment = (function()
 			}
 		},
 		
+		/* Getters */
+		
 		getEquipmentStatisticByKey: function(equipmentKey, statisticName)
 		{
 			let statistic = equipmentStatistics[equipmentKey];
@@ -253,5 +255,6 @@ var Equipment = (function()
 			
 			Game.setState("equipment", equipmentKey, newCount);
 		},
+		
 	}
 })();

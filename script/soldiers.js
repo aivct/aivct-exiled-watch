@@ -447,14 +447,14 @@ var Soldiers = (function()
 			
 			let HP = Soldiers.getSoldierHPByID(soldierID);
 			let newHP = HP - damageAmount;
+			// particle BEFORE killing, otherwise formationID returns null
+			GUI.addParticleAbovePiece("damage", damageAmount, Soldiers.getSoldierFormationIDByID(soldierID));			
+			Game.setIDObjectProperty("soldiers", soldierID, "HP", newHP);
+			
 			if(newHP <= 0)
 			{
 				Soldiers.killSoldier(soldierID, sourceID);
 			}
-			
-			// TODO: damage particle effect
-			
-			Game.setIDObjectProperty("soldiers", soldierID, "HP", newHP);
 			
 			Soldiers.addSoldierMetric(soldierID, "totalDamageReceived", damageAmount);
 			if(sourceID) Soldiers.addSoldierMetric(sourceID, "totalDamageDealt", damageAmount);
@@ -541,7 +541,6 @@ var Soldiers = (function()
 			let hitChance = BASE_HIT_CHANCE_PERCENT + attack - defense;
 			let weaponDamage = randomInteger(weaponMinMaxDamage.min, weaponMinMaxDamage.max);
 			
-			console.log(`RANGED ATTACK`);
 			if(diceRoll < hitChance)
 			{
 				let bodyPartHit = randomWeightedKey(BODY_PARTS_HIT_CHANCE);

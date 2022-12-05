@@ -534,7 +534,7 @@ var GUI = (function()
 				let font = `${particleFontSize}px ${fontFamily}`;
 				if(context.font !== font) context.font = font;
 				
-				let text = `${particle.data}`;
+				let text = `${particle.data.toFixed()}`;
 				// draw
 				context.fillText(text, Math.floor(particle.x + offsetX), Math.floor(particle.y + offsetY));
 			}
@@ -578,6 +578,7 @@ var GUI = (function()
 			
 			if(type === "damage")
 			{
+				// TODO: change merging to be only from the same source (don't care hpw far)
 				// if we can get a closer effect, then merge into it.
 				let closeParticle = GUI.findParticleWithinLength(type, particle, 5);
 				

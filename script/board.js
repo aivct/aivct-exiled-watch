@@ -165,6 +165,7 @@ var Board = (function()
 						// don't repeat yourself and current position is NOT a valid movement position.
 						// this is a performance optimization to save us from backtracking
 						if((validTiles.indexOf(neighbour) > -1) || neighbour === index) continue;
+						// TODO: multi-tile agent pathfinding
 						if(Board.isTileValidDestinationByIndex(neighbour))
 						{
 							addUniqueElementInArray(currentTiles, neighbour);
@@ -188,6 +189,8 @@ var Board = (function()
 			
 			TODO: fix to prioritize least distance tiles when we add variable movecost terrains. 
 			we can be lazy because all distances are 1 for now.
+			
+			// TODO: multi-tile agent pathfinding
 			
 			@param originIndex - the position index of the origin tile
 			@param range - the cutoff at which the algorithm will stop. if not specified, then range is infinite.

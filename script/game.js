@@ -43,12 +43,27 @@ var Game = (function()
 		
 		newGame: function()
 		{
-			state["ID"]["pieces"] = 1000;
-			state["ID"]["soldiers"] = 1000;
+			Game.resetState();
+			
 			Board.createMap();
 			Pieces.newGame();
 			
 			GUI.updateAll();
+		},
+		
+		resetState: function()
+		{
+			state["system"].version = VERSION;
+			// reset 
+			state["ID"]["pieces"] = 1000;
+			state["pieces"] = [];
+			state["ID"]["soldiers"] = 1000;
+			state["soldiers"] = [];
+			
+			state["equipment"] = {};
+			Equipment.initialize();
+			state["metrics"] = {};
+			Metrics.initialize();
 		},
 		
 		/*

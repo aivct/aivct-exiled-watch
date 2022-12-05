@@ -1,3 +1,8 @@
+0.2.7
+-added scenarios!
+	-temporarily added a test scenario for a set piece battle
+-readded particles 
+	-fixed floating point error in merging particles
 0.2.6
 -added mounts and rebalanced movement.
 	-infantry now moves much less.
