@@ -12,7 +12,7 @@
 		but that's what they are for in data-oriented design, 
 		which is more suited for game programming than OOP.
  */
-var Game = (function()
+const Game = (function()
 {
 	var state;
 	

@@ -1,4 +1,4 @@
-const VERSION = "0.2.7"; 
+const VERSION = "0.2.8"; 
 // basic init functions
 function initialize()
 {
@@ -208,8 +208,8 @@ var Assets = (function()
 function CanvasLayer(width = 800, height = 600, onpaint, alwaysNeedsUpdate = false)
 {
 	this.canvas = document.createElement("CANVAS");
-	this.canvas.width = 800;
-	this.canvas.height = 600;
+	this.canvas.width = width;
+	this.canvas.height = height;
 	this.canvas.style.position = "absolute";
 	this.canvas.style.top = "0";
 	this.canvas.style.left = "0";

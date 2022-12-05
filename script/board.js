@@ -6,7 +6,7 @@
 	
 	TODO: move pathfinding to wasm for performance
  */
-var Board = (function()
+const Board = (function()
 {
 	const DEFAULT_MAP_WIDTH = 16;
 	const DEFAULT_MAP_HEIGHT = 16;

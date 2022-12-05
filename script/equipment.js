@@ -4,16 +4,18 @@
 	
 	TODO: add artifacts
  */
-var Equipment = (function()
+const Equipment = (function()
 {
-	var equipmentStatistics = {
+	const equipmentStatistics = {
 		/* Shields */
 		"round_shield": {
+			"localization_string": "equipment_round_shield",
 			"type": "shield",
 			"weight": 10,
 			"block": 15,
 		},
 		"tower_shield": {
+			"localization_string": "equipment_tower_shield",
 			"type": "shield",
 			"weight": 30,
 			"block": 40,
@@ -21,24 +23,28 @@ var Equipment = (function()
 		
 		/* Armor */
 		"tunic": {
+			"localization_string": "equipment_tunic",
 			"type": "armor",
 			"armor_type": "shirt",
 			"weight": 2,
 			"armor": 1,
 		},
 		"gambeson": {
+			"localization_string": "equipment_gambeson",
 			"type": "armor",
 			"armor_type": "shirt",
 			"weight": 10,
 			"armor": 8,
 		},
 		"mail_shirt": {
+			"localization_string": "equipment_mail_shirt",
 			"type": "armor",
 			"armor_type": "shirt",
 			"weight": 16,
 			"armor": 16,
 		},
 		"plate_armor": {
+			"localization_string": "equipment_plate_armor",
 			"type": "armor",
 			"armor_type": "full_plate",
 			"weight": 46,
@@ -47,6 +53,7 @@ var Equipment = (function()
 		
 		/* Weapons */
 		"dagger": {
+			"localization_string": "equipment_dagger",
 			"type": "weapon",
 			"weight": 3,
 			"damage_type": "pierce",
@@ -54,6 +61,7 @@ var Equipment = (function()
 			"max_damage": 15,
 		},
 		"shortsword": {
+			"localization_string": "equipment_shortsword",
 			"type": "weapon",
 			"weight": 6,
 			"damage_type": "slash",
@@ -61,6 +69,7 @@ var Equipment = (function()
 			"max_damage": 35,
 		},
 		"longsword": {
+			"localization_string": "equipment_longsword",
 			"type": "weapon",
 			"weight": 10,
 			"damage_type": "slash",
@@ -68,6 +77,7 @@ var Equipment = (function()
 			"max_damage": 55,
 		},
 		"simple_spear": {
+			"localization_string": "equipment_simple_spear",
 			"type": "weapon",
 			"weight": 3,
 			"damage_type": "pierce",
@@ -75,6 +85,7 @@ var Equipment = (function()
 			"max_damage": 25,
 		},
 		"mace": {
+			"localization_string": "equipment_mace",
 			"type": "weapon",
 			"weight": 8,
 			"damage_type": "blunt",
@@ -83,6 +94,7 @@ var Equipment = (function()
 		},
 		
 		"crossbow": {
+			"localization_string": "equipment_crossbow",
 			"type": "weapon",
 			"isRanged": true,
 			"weight": 8,
@@ -95,19 +107,21 @@ var Equipment = (function()
 		
 		/* Mounts */
 		"pony": {
+			"localization_string": "equipment_pony",
 			"type": "mount",
 			"weight": 0, // we'll need to further refine the weight system. it should be negative (but also not)
 			"movement": 5, // clamp movement to THIS instead, minus penalities of course
 		},
 		
 		"horse": {
+			"localization_string": "equipment_horse",
 			"type": "mount",
 			"weight": 0, 
 			"movement": 6, 
 		},
 	}
 	
-	var ArmorTypesStatistics = {
+	const ArmorTypesStatistics = {
 		"shirt": {
 			"chest":100,
 			"groin":20,
@@ -256,5 +270,16 @@ var Equipment = (function()
 			Game.setState("equipment", equipmentKey, newCount);
 		},
 		
+		/* GUI */
+		getEquipmentDisplayName: function(equipmentKey)
+		{
+			let stringKey = Equipment.getEquipmentStatisticByKey(equipmentKey, "localization_string");
+			if(!equipmentKey)
+			{
+				console.warn(`Equipment.getEquipmentDisplayName: localization_string not found for "${equipmentKey}".`);
+				return equipmentKey; // reflect param back, because we always should return SOME string.
+			}
+			return Localization.getString(stringKey);
+		},
 	}
 })();

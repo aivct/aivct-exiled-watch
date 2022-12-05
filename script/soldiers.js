@@ -23,7 +23,8 @@
 	
 	But seriously, most of the time you're only going to care about head/chest protection, the rest is basically cosmetic.
 	
-	TODO: indicators for damage and a way for players to get more information about which armor sets work and which don't.
+	TODO: more indicators/animations for damage and a way for players to get more information about which armor works and which don't.
+		-I'm not going to force players to do baysesian stats, they should see on the battlefield how armor affects them.
 		
 	TODO:
 		stamina:
@@ -40,7 +41,7 @@
 
 	
  */
-var Soldiers = (function()
+const Soldiers = (function()
 {
 	const MIN_DAMAGE = 1;
 	const DEFAULT_MIN_DAMAGE = 5;
@@ -76,13 +77,15 @@ var Soldiers = (function()
 		"legs": 0.8
 	}
 	
-	var backstoriesStatistics = {
-		
+	const backstoriesStatistics = {
+		// TODO:
 	}
 	
-	var statusEffectsStatistics = {
-		
+	const statusEffectsStatistics = {
+		// TODO:
 	}
+	
+	var unitDesignerEquipment = [];
 	
 	return {
 		/*
@@ -614,6 +617,36 @@ var Soldiers = (function()
 				}
 			}
 		},
+		
+		/* GUI */
+		getUnitDesignerEquipment: function()
+		{
+			return unitDesignerEquipment;
+		},
+		
+		addUnitDesignerEquipment: function(equipmentKey)
+		{
+			// temp while we're working on slots
+			// don't repeat.
+			if(unitDesignerEquipment.indexOf(equipmentKey) < 0)
+			{
+				unitDesignerEquipment.push(equipmentKey);
+				GUI.updateUnitDesigner();
+			}
+		},
+		
+		removeUnitDesignerEquipment: function(equipmentKey)
+		{
+			removeElementInArray(unitDesignerEquipment, equipmentKey);
+			GUI.updateUnitDesigner();
+		},
+		
+		// calculation functions 
+		calculateUnitDesignerStatistics: function()
+		{
+			
+		},
+		
 	}
 })();
 

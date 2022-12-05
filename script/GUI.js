@@ -11,7 +11,7 @@
 		
 	TODO: cull drawing if not visible (if bounding box is outside of view, ex).
  */
-var GUI = (function()
+const GUI = (function()
 {
 	const DEFAULT_PARTICLE_LIFESPAN = 2000;
 	const TILE_MARGIN = 5;
@@ -103,8 +103,8 @@ var GUI = (function()
 			document.body.addEventListener("keyup",GUI.handleKeyup, false);
 			
 			GUIContainer = document.createElement("div");
-			GUIContainer.style.width = "800px";
-			GUIContainer.style.height = "600px";
+			GUIContainer.style.width = `${canvasWidth}px`;
+			GUIContainer.style.height = `${canvasHeight}px`;
 			GUIContainer.classList.add("gui-container");
 			GUIContainer.style.position = "relative";
 			
@@ -303,6 +303,28 @@ var GUI = (function()
 			element.appendChild(header);
 			
 			return element;
+		},
+		
+		createUnitDesignerElement: function()
+		{
+			let element = document.createElement("div");
+			element.style.position = "absolute";
+			element.style.top = "0";
+			element.style.right = "0";
+			element.classList.add("gui-element");
+			
+			// equipment viewer 
+			
+				// tooltip for each listitem
+			
+			// potential equipment to add.
+			
+			// stats viewer
+		},
+		
+		updateUnitDesigner: function()
+		{
+			
 		},
 		
 		draw: function(timestamp)
@@ -649,6 +671,7 @@ var GUI = (function()
 						let isRanged = Pieces.isPieceRangedByID(selectedPieceID);
 						if(!isRanged) break;
 						if(abilityName === "ability_ranged_attack")validTargetsID = Pieces.getValidTargetsID(selectedPieceID, selectedPieceRange, "attack");
+						// TODO: highlight all possible range in red
 					case "ability_melee_attack":
 						if(abilityName === "ability_melee_attack") validTargetsID = Pieces.getValidTargetsID(selectedPieceID, 1, "attack");
 						if(selectedPieceAP > 0)
@@ -787,7 +810,7 @@ var GUI = (function()
 		
 		panBoardX: function(x)
 		{
-			// TODO TODO: fix how it is SOOO SLOW.
+			// TODO: fix how it is SOOO SLOW.
 			if(!x) return; // 0 doesn't matter anyways
 			offsetX += x;
 			// EVERYTHING changes x and y position

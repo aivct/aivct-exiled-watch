@@ -17,9 +17,9 @@
 	 factor movement OUT, or at least out in the general UI flow (perhaps make it the default null?
 
  */
-var Abilities = (function()
+const Abilities = (function()
 {
-	var abilitiesStatistics = {
+	const abilitiesStatistics = {
 		"ability_move": {
 			"abilityName": "ability_move",
 			"image": "ability_move",

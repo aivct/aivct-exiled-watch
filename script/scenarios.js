@@ -11,7 +11,7 @@
 		https://gamedev.stackexchange.com/questions/18050/multi-tile-agent-path-finding-algorithm
 	Idea 3: formation direction?
  */
-var Scenarios = (function()
+const Scenarios = (function()
 {
 	return {
 		// temp until we can reduce it to JSON.

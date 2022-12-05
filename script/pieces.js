@@ -28,7 +28,7 @@
 	TODO: Auto-retreat. If a soldier's HP is below X, then they will move to reserves.
 	TODO: fix recalculating PIECE convenient stats when adding equipment to a SOLDIER
  */
-var Pieces = (function()
+const Pieces = (function()
 {
 	const BASE_HIT_CHANCE_PERCENT = 35; 
 	const BASE_XP_PER_MOVE = 5; // how much a basic attack or defense will give in XP

@@ -1,3 +1,6 @@
+0.2.8
+-added localization and strings, for future best practices
+	-if string is not found, return the key instead. this way it's REALLY obvious when localization is not done.
 0.2.7
 -added scenarios!
 	-temporarily added a test scenario for a set piece battle
