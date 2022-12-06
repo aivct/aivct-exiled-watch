@@ -641,10 +641,50 @@ const Soldiers = (function()
 			GUI.updateUnitDesigner();
 		},
 		
-		// calculation functions 
-		calculateUnitDesignerStatistics: function()
+		getUnitDesignerArmorCoverage: function()
 		{
-			
+			return Soldiers.calculateTotalArmorByEquipmentList(Soldiers.getUnitDesignerEquipment());
+		},
+		
+		// calculation functions 
+		// factored out so they can be used in mock and live
+		calculateTotalArmorByEquipmentList: function(equipmentList)
+		{
+			let calculatedTotalArmor = {};
+			for(let coverageKey in BODY_PARTS_HIT_CHANCE)
+			{
+				calculatedTotalArmor[coverageKey] = 0;
+			}
+			for(let index = 0; index < equipmentList.length; index++)
+			{
+				let equipmentKey = equipmentList[index];
+				let equipmentType = Equipment.getEquipmentTypeByKey(equipmentKey);
+				
+				if(equipmentType === "armor")
+				{
+					let equipmentArmor = Equipment.getEquipmentArmorByKey(equipmentKey);
+					
+					for(let coverageKey in BODY_PARTS_HIT_CHANCE)
+					{
+						let coverageRatio = Equipment.getEquipmentArmorCoverageByKey(equipmentKey, coverageKey) / 100;
+						let partArmor = coverageRatio * equipmentArmor;
+						calculatedTotalArmor[coverageKey] += partArmor;
+					}
+				}
+			}
+			return calculatedTotalArmor;
+		},
+		
+		calculateTotalWeightByEquipmentList: function(equipmentList)
+		{
+			let totalWeight = 0;
+			for(let index = 0; index < equipmentList.length; index++)
+			{
+				let equipmentKey = equipmentList[index];
+				let equipmentWeight = Equipment.getEquipmentWeightByKey(equipmentKey);
+				if(equipmentWeight) totalWeight += equipmentWeight;
+			}
+			return totalWeight;
 		},
 		
 	}

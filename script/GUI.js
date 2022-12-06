@@ -23,6 +23,11 @@ const GUI = (function()
 	var endTurnButtonElement;
 	var tooltipElement;
 	
+	var unitDesignerElement;
+	var equipmentListElement;
+	var equipmentViewerElement;
+	var statisticsArmorElement;
+	
 	var mapLayer;
 	var unitsLayer;
 	var effectsLayer;
@@ -130,6 +135,9 @@ const GUI = (function()
 			
 			endTurnButtonElement = GUI.createEndTurnButtonElement();
 			GUIContainer.appendChild(endTurnButtonElement);
+			
+			unitDesignerElement = GUI.createUnitDesignerElement();
+			GUIContainer.appendChild(unitDesignerElement);
 			
 			document.body.appendChild(GUIContainer);
 		},
@@ -310,21 +318,141 @@ const GUI = (function()
 			let element = document.createElement("div");
 			element.style.position = "absolute";
 			element.style.top = "0";
-			element.style.right = "0";
+			element.style.left = "0";
 			element.classList.add("gui-element");
 			
 			// equipment viewer 
-			
+			element.appendChild(GUI.createUnitDesignerEquipmentElement());
 				// tooltip for each listitem
 			
-			// potential equipment to add.
-			
 			// stats viewer
+			element.appendChild(GUI.createUnitDesignerStatisticsElement());
+			
+			return element;
+		},
+		
+		createUnitDesignerEquipmentElement: function()
+		{
+			let element = document.createElement("div");
+			element.classList.add("horizontal");
+			
+			let header = document.createElement("h1");
+			let textNode = document.createTextNode("EQUIPMENT");
+			header.appendChild(textNode);
+			element.appendChild(header);
+			
+			// equipment list
+			equipmentListElement = document.createElement("div");
+			equipmentListElement.style.height = "200px";
+			equipmentListElement.style.width = "200px";
+			equipmentListElement.style.overflow = "auto";
+			element.appendChild(equipmentListElement);
+			
+			// equipment viewer
+			equipmentViewerElement = document.createElement("div");
+			equipmentViewerElement.style.height = "200px";
+			equipmentViewerElement.style.width = "200px";
+			equipmentViewerElement.style.overflow = "auto";
+			let buyableEquipment = Equipment.getEquipmentStatistics();
+			for(let equipmentKey in buyableEquipment)
+			{
+				let equipment = buyableEquipment[equipmentKey];
+				let equipmentName = Equipment.getEquipmentDisplayName(equipmentKey);
+				
+				let itemElement = document.createElement("div");
+				
+				let addEquipmentButton = document.createElement("div");
+				addEquipmentButton.classList.add(`horizontal`);
+				addEquipmentButton.classList.add(`gui-square-button`);
+				addEquipmentButton.style.width = `16px`;
+				addEquipmentButton.style.height = `16px`;
+				addEquipmentButton.innerHTML = `+`;
+				addEquipmentButton.onclick = () => { Soldiers.addUnitDesignerEquipment(equipmentKey) };
+				itemElement.appendChild(addEquipmentButton);
+				
+				let itemText = document.createElement("p");
+				itemText.classList.add(`horizontal`);
+				let textNode = document.createTextNode(equipmentName);
+				itemText.appendChild(textNode);
+				
+				itemElement.appendChild(itemText);
+				
+				equipmentViewerElement.appendChild(itemElement);
+			}
+			element.appendChild(equipmentViewerElement);
+			
+			return element;
+		},
+		
+		createUnitDesignerStatisticsElement: function()
+		{
+			let element = document.createElement("div");
+			element.classList.add("horizontal");
+			
+			let header = document.createElement("h1");
+			let textNode = document.createTextNode("STATISTICS");
+			header.appendChild(textNode);
+			element.appendChild(header);
+			
+			// armor
+			statisticsArmorElement = document.createElement("div");
+			statisticsArmorElement.style.height = "200px";
+			statisticsArmorElement.style.width = "200px";
+			statisticsArmorElement.style.overflow = "auto";
+			let armorStatistics = Soldiers.getUnitDesignerArmorCoverage();
+			for(let coverageKey in armorStatistics)
+			{
+				let itemElement = document.createElement("div");
+				itemElement.innerHTML = `${Localization.getString(coverageKey)}: ${0}`;
+				statisticsArmorElement.appendChild(itemElement);
+			}
+			
+			element.appendChild(statisticsArmorElement);
+			
+			return element;
 		},
 		
 		updateUnitDesigner: function()
 		{
+			// update equipment list
+			equipmentListElement.innerHTML = ``;
+			let unitDesignerEquipment = Soldiers.getUnitDesignerEquipment();
+			for(let equipmentKey in unitDesignerEquipment)
+			{
+				let equipment = unitDesignerEquipment[equipmentKey];
+				let equipmentName = Equipment.getEquipmentDisplayName(equipment);
+				
+				let itemElement = document.createElement("div");
+				
+				let addEquipmentButton = document.createElement("div");
+				addEquipmentButton.classList.add(`horizontal`);
+				addEquipmentButton.classList.add(`gui-square-button`);
+				addEquipmentButton.style.width = `16px`;
+				addEquipmentButton.style.height = `16px`;
+				addEquipmentButton.innerHTML = `-`;
+				addEquipmentButton.onclick = () => { Soldiers.removeUnitDesignerEquipment(equipment) };
+				itemElement.appendChild(addEquipmentButton);
+				
+				let itemText = document.createElement("p");
+				itemText.classList.add(`horizontal`);
+				let textNode = document.createTextNode(equipmentName);
+				itemText.appendChild(textNode);
+				
+				itemElement.appendChild(itemText);
+				
+				equipmentListElement.appendChild(itemElement);
+			}
 			
+			// update statistics
+			statisticsArmorElement.innerHTML = ``;
+			let armorStatistics = Soldiers.getUnitDesignerArmorCoverage();
+			for(let coverageKey in armorStatistics)
+			{
+				let text = `${Localization.getString(coverageKey)}: ${Math.round(armorStatistics[coverageKey])}`
+				let itemElement = document.createElement("div");
+				itemElement.innerHTML = text;
+				statisticsArmorElement.appendChild(itemElement);
+			}
 		},
 		
 		draw: function(timestamp)

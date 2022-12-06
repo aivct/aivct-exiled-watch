@@ -1,4 +1,4 @@
-const VERSION = "0.2.8"; 
+const VERSION = "0.2.9"; 
 // basic init functions
 function initialize()
 {

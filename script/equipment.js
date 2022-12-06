@@ -271,6 +271,11 @@ const Equipment = (function()
 		},
 		
 		/* GUI */
+		getEquipmentStatistics: function()
+		{
+			return equipmentStatistics;
+		},
+		
 		getEquipmentDisplayName: function(equipmentKey)
 		{
 			let stringKey = Equipment.getEquipmentStatisticByKey(equipmentKey, "localization_string");

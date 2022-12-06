@@ -20,14 +20,20 @@ const Localization = (function()
 		"equipment_gambeson": "Gambeson",
 		"equipment_mail_shirt": "Mail Shirt",
 		"equipment_plate_armor": "Plate Armor",
-		"equipment_dagger": "Round Shield",
-		"equipment_shortsword": "Round Shield",
-		"equipment_longsword": "Round Shield",
-		"equipment_simple_spear": "Round Shield",
-		"equipment_mace": "Round Shield",
-		"equipment_crossbow": "Round Shield",
-		"equipment_pony": "Round Shield",
-		"equipment_horse": "Round Shield",
+		"equipment_dagger": "Dagger",
+		"equipment_shortsword": "Shortsword",
+		"equipment_longsword": "Longsword",
+		"equipment_simple_spear": "Simple Spear",
+		"equipment_mace": "Mace",
+		"equipment_crossbow": "Crossbow",
+		"equipment_pony": "Pony",
+		"equipment_horse": "Horse",
+		
+		"head": "Head",
+		"chest": "Chest",
+		"groin": "Groin",
+		"arms": "Arms",
+		"legs": "Legs",
 	}
 	
 	return {
