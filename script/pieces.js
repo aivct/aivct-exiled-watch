@@ -33,7 +33,7 @@ const Pieces = (function()
 	const BASE_HIT_CHANCE_PERCENT = 35; 
 	const BASE_XP_PER_MOVE = 5; // how much a basic attack or defense will give in XP
 	
-	const MAX_AP = 2;
+	const MAX_AP = 1;
 	// fields
 	var selectedPieceID = null;
 	var selectedBuyableName = null;

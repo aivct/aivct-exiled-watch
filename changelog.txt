@@ -1,3 +1,6 @@
+0.2.10
+-added tooltips
+	-added tooltips for abilities
 0.2.9
 -added the bare bones to a prototype unit designer
 0.2.8

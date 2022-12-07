@@ -139,6 +139,12 @@ const GUI = (function()
 			unitDesignerElement = GUI.createUnitDesignerElement();
 			GUIContainer.appendChild(unitDesignerElement);
 			
+			// TEMP
+			unitDesignerElement.style.display = "none";
+			
+			tooltipElement = GUI.createTooltipElement();
+			GUIContainer.appendChild(tooltipElement);
+			
 			document.body.appendChild(GUIContainer);
 		},
 		
@@ -265,6 +271,24 @@ const GUI = (function()
 			element.classList.add("horizontal");
 			element.onclick = () => { Abilities.setSelectedAbility(ability.abilityName) };
 			
+			
+			
+			element.onmouseover = (event) => 
+			{
+				let tooltipContent = document.createElement("div");
+				tooltipContent.innerHTML = `<h1>${Localization.getString(ability?.abilityName)}</h1><p>${Localization.getString(ability?.abilityName+'_desc')}</p>`;
+				
+				let elementBounds = element.getBoundingClientRect();
+				let clientX = elementBounds.left;
+				let clientY = elementBounds.top;
+				let width = elementBounds.width;
+				let height = elementBounds.height;
+				
+				GUI.setTooltip(tooltipContent, clientX + width - bounds.x , clientY - bounds.y);
+			};
+			
+			element.onmouseleave = (event) => { GUI.hideTooltip() };
+			
 			let icon = document.createElement("canvas");
 			icon.width = tileSize;
 			icon.height = tileSize;
@@ -291,7 +315,13 @@ const GUI = (function()
 		
 		createTooltipElement: function()
 		{
+			let element = document.createElement("div");
+			element.style.position = "absolute";
+			element.style.top = "0";
+			element.style.left = "0";
+			element.classList.add("gui-element");
 			
+			return element;
 		},
 		
 		createEndTurnButtonElement: function()
@@ -455,6 +485,31 @@ const GUI = (function()
 			}
 		},
 		
+		setTooltip: function(element, x, y)
+		{
+			tooltipElement.style.display = `block`;
+			
+			tooltipElement.style.left = `${x}px`;
+			tooltipElement.style.top = `${y}px`;
+			tooltipElement.innerHTML = ``;
+			tooltipElement.appendChild(element);
+		},
+		
+		hideTooltip: function()
+		{
+			tooltipElement.style.display = `none`;
+		},
+		/*
+		updateAbilityToolbarSelected: function()
+		{
+			
+		},
+		
+		clearAbilityToolbarSelected: function()
+		{
+			
+		},
+		 */
 		draw: function(timestamp)
 		{
 			if(!lastTime)

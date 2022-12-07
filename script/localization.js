@@ -34,6 +34,13 @@ const Localization = (function()
 		"groin": "Groin",
 		"arms": "Arms",
 		"legs": "Legs",
+		
+		"ability_move":"Move",
+		"ability_move_desc":"Moves a unit.",
+		"ability_melee_attack":"Melee Attack",
+		"ability_melee_attack_desc":"Attack in melee.",
+		"ability_ranged_attack":"Ranged Attack",
+		"ability_ranged_attack_desc":"Attack at range.",
 	}
 	
 	return {

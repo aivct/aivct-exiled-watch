@@ -23,6 +23,16 @@
 	
 	But seriously, most of the time you're only going to care about head/chest protection, the rest is basically cosmetic.
 	
+	Heavy infantry moves at the same speed as light infantry, but *FATIGUES* faster if they aren't used to the weight. Also mud is fatal.
+	Light Infantry:
+		Tunic, Sling
+	Medium Infantry:
+		Mail, Sword, Shield
+	Heavy Infantry:
+		Plate, Heavy Weapons
+	General progression:
+		Light Infantry -> Medium Infantry -> Heavy Infantry
+	
 	TODO: more indicators/animations for damage and a way for players to get more information about which armor works and which don't.
 		-I'm not going to force players to do baysesian stats, they should see on the battlefield how armor affects them.
 		
@@ -38,6 +48,7 @@
 	TODO:
 		Ungeneralize equipment and reduce to a simpler 6 point slot.
 	TODO: SoldierLogMessage
+	TODO: idea: soldiers are only "wounded" after a battle if the formation survives.
 
 	
  */
@@ -645,7 +656,14 @@ const Soldiers = (function()
 		{
 			return Soldiers.calculateTotalArmorByEquipmentList(Soldiers.getUnitDesignerEquipment());
 		},
-		
+		/*
+		getUnitDesignerStatistics: function()
+		{
+			return {
+				
+			}
+		},
+		 */
 		// calculation functions 
 		// factored out so they can be used in mock and live
 		calculateTotalArmorByEquipmentList: function(equipmentList)
