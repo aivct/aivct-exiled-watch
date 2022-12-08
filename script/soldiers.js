@@ -50,7 +50,17 @@
 	TODO: SoldierLogMessage
 	TODO: idea: soldiers are only "wounded" after a battle if the formation survives.
 
+	TODO: "miss!" indicator
 	
+	TODO: maxHealth based on attributes
+	
+	TODO: Army Mgmt Screen, with Templates that automates much of the work.
+		-Equip and build one soldier to build them all!
+			-Equipment can be "cash convertible" at settlements/merchants etc, up to a limited amounted.
+				You're still only going to have a limited amount of shiny plate knights, so use it wisely!
+		-Oh, and return equipment to armory of respective teams after war.
+	
+	? Tower Defense ?
  */
 const Soldiers = (function()
 {
@@ -59,6 +69,10 @@ const Soldiers = (function()
 	const DEFAULT_MAX_DAMAGE = 10;
 	const BASE_HIT_CHANCE_PERCENT = 35;
 	const BASE_MOVEMENT = 2;
+	const BASE_ATTRIBUTE = 20;
+	const MAX_ATTRIBUTE = 100;
+	const BASE_WEAPON_SKILL = 30;
+	const MAX_WEAPON_SKILL = 100;
 	
 	/*
 		Hitchance:
@@ -89,7 +103,17 @@ const Soldiers = (function()
 	}
 	
 	const backstoriesStatistics = {
-		// TODO:
+		"veteran": {
+			"localization_string": "background_veteran",
+			"attributes": {
+				"strength": { "min": 20, "max": 25},
+				"endurance": { "min": 25, "max": 30},
+				"constitution": { "min": 20, "max": 25},
+				"coordination": { "min": 20, "max": 25},
+				"agility": { "min": 15, "max": 25},
+				"charisma": { "min": 15, "max": 25},
+			},
+		},
 	}
 	
 	const statusEffectsStatistics = {
@@ -119,19 +143,39 @@ const Soldiers = (function()
 			soldier.name = null;
 			// same deal with gender, though there are different options: M, F, N, and N/A (null).
 			soldier.gender = null;
+			
 			soldier.HP = 100;
 			soldier.maxHP = 100;
 			soldier.fatigue = 0;
+						
+			// attributes
+			soldier.attributes = {};
+			soldier.attributes.strength = BASE_ATTRIBUTE; // damage
+			soldier.attributes.endurance = BASE_ATTRIBUTE; // fatigue
+			soldier.attributes.constitution = BASE_ATTRIBUTE; // HP
+			soldier.attributes.coordination = BASE_ATTRIBUTE; // weapon skills
+			soldier.attributes.agility = BASE_ATTRIBUTE; // dodge
+			soldier.attributes.charisma = BASE_ATTRIBUTE; // leadership
 			
-			// TEMP
-			soldier.attack = 15;
-			soldier.defense = 10;
-			soldier.accuracy = 10;
+			// TODO: weapon skills like this are kind of punishing,
+				// in that it restricts the abilities of players to innovate.
+				// by that means, weapon skills should matter, but a knight SHOULD be proficient with any weapon.
+			// skills
+			soldier.skills = {};
+			soldier.skills.oneHanded = BASE_WEAPON_SKILL;
+			soldier.skills.twoHanded = BASE_WEAPON_SKILL;
+			soldier.skills.sword = BASE_WEAPON_SKILL;
+			soldier.skills.spear = BASE_WEAPON_SKILL;
+			soldier.skills.greatsword = BASE_WEAPON_SKILL;
+			soldier.skills.polearm = BASE_WEAPON_SKILL;
+			soldier.skills.bow = BASE_WEAPON_SKILL;
+			soldier.skills.sling = BASE_WEAPON_SKILL;
+			soldier.skills.crossbow = BASE_WEAPON_SKILL;
 			
 			soldier.isDead = false;
 			soldier.killedByID = null;
-			soldier.team = team;
 			
+			soldier.team = team;
 			soldier.formationID = null;
 			soldier.isOfficer = false;
 			soldier.officerID = null; // if soldier is an officer, additional stats here.
@@ -294,20 +338,27 @@ const Soldiers = (function()
 		
 		getSoldierAttackByID: function(soldierID)
 		{
-			let attack = Game.getIDObjectProperty("soldiers", soldierID, "attack");
+			let attack = 0;
+			// first, base attack based on coordination attribute
+			attack += Soldiers.getSoldierAttribute(soldierID, "coordination") / 2;
+			// next, weapon skill, if applicable.
+			let weaponType = Soldiers.getSoldierWeaponTypeByID(soldierID);
+			// if no weapon type, all that means is that the soldier has nothing equipped. So do nothing.
+			if(weaponType)
+			{
+				let weaponSkill = Soldiers.getSoldierSkill(soldierID, weaponType);
+				attack += weaponSkill/4;
+			}
 			return attack;
 		},
 		
 		getSoldierDefenseByID: function(soldierID)
 		{
-			let defense = Game.getIDObjectProperty("soldiers", soldierID, "defense");
+			let defense = 0;
+			// first, base defense based on coordination attribute
+			defense += Soldiers.getSoldierAttribute(soldierID, "coordination") / 2;
+			// TODO: add shield bonuses here later...
 			return defense;
-		},
-		
-		getSoldierAccuracyByID: function(soldierID)
-		{
-			let accuracy = Game.getIDObjectProperty("soldiers", soldierID, "accuracy");
-			return accuracy;
 		},
 		
 		// always returns a valid {min:x,max:y} pair.
@@ -346,6 +397,15 @@ const Soldiers = (function()
 				weaponRange = Equipment.getWeaponRangeByKey(weaponKey);
 			}
 			return weaponRange;
+		},
+		
+		// can return null as an invalid value.
+		getSoldierWeaponTypeByID: function(soldierID)
+		{
+			let weaponKey = Soldiers.getSoldierWeaponKeyByID(soldierID);
+			if(!weaponKey) return null;
+			let weaponType = Equipment.getWeaponTypeByKey(weaponKey);
+			return weaponType;
 		},
 		
 		getSoldierArmorBodyPartByID: function(soldierID, bodyPart)
@@ -416,7 +476,72 @@ const Soldiers = (function()
 			}
 		},
 		
+		getSoldierAttributesByID: function(soldierID)
+		{
+			return Game.getIDObjectProperty("soldiers", soldierID, "attributes");
+		},
+		
+		getSoldierSkillsByID: function(soldierID)
+		{
+			return Game.getIDObjectProperty("soldiers", soldierID, "skills");
+		},
+		
+		getSoldierAttribute: function(soldierID, attributeName)
+		{
+			let attributes = Game.getIDObjectProperty("soldiers", soldierID, "attributes");
+			if(!attributes) 
+			{
+				console.warn(`Soldiers.getSoldierAttribute: cannot find attributes for "${soldierID}".`);
+				return;
+			}
+			return attributes[attributeName];
+		},
+		
+		getSoldierSkill: function(soldierID, skillName)
+		{
+			let skills = Game.getIDObjectProperty("soldiers", soldierID, "skills");
+			if(!skills) 
+			{
+				console.warn(`Soldiers.getSoldierSkill: cannot find skills for "${soldierID}".`);
+				return;
+			}
+			return skills[skillName];
+		},
+		
 		/* Setters */
+		
+		changeSoldierAttribute: function(soldierID, attributeName, value)
+		{
+			// TODO: probably shouldn't change this directly
+			let attributes = Game.getIDObjectProperty("soldiers", soldierID, "attributes");
+			if(!attributes) 
+			{
+				console.warn(`Soldiers.changeSoldierAttribute: cannot find attributes for "${soldierID}".`);
+				return;
+			}
+			attributes[attributeName] += value;
+		},
+		
+		changeSoldierSkill: function(soldierID, skillName, value = 0)
+		{
+			// TODO: probably shouldn't change this directly
+			let skills = Game.getIDObjectProperty("soldiers", soldierID, "skills");
+			if(!skills) 
+			{
+				console.warn(`Soldiers.getSoldierSkill: cannot find skills for "${soldierID}".`);
+				return;
+			}
+			skills[skillName] += value;
+		},
+		
+		addSoldierSkillXP: function(soldierID, skillName, value)
+		{
+			// TODO: temp 
+			if(Math.random() < (1/4))
+			{
+				Soldiers.changeSoldierSkill(soldierID, skillName, 1);
+			}
+		},
 		
 		// add without dealing with player equipment stocks
 		addSoldierEquipment: function(soldierID, equipmentKey)
@@ -461,8 +586,6 @@ const Soldiers = (function()
 			
 			let HP = Soldiers.getSoldierHPByID(soldierID);
 			let newHP = HP - damageAmount;
-			// particle BEFORE killing, otherwise formationID returns null
-			GUI.addParticleAbovePiece("damage", damageAmount, Soldiers.getSoldierFormationIDByID(soldierID));			
 			Game.setIDObjectProperty("soldiers", soldierID, "HP", newHP);
 			
 			if(newHP <= 0)
@@ -508,12 +631,47 @@ const Soldiers = (function()
 			if(pieceID) Pieces.removeSoldierByID(pieceID, soldierID);
 			
 			Game.setIDObjectProperty("soldiers", soldierID, "isDead", true);
-			// TODO: add metrics
-			
+			if(killerID) Soldiers.addSoldierMetric(killerID, "totalKills", 1);
 			// TODO: onkill
 		},
 		
 		attackSoldier: function(attackerID, defenderID)
+		{
+			let attack = Soldiers.getSoldierAttackByID(attackerID);
+			let defense = Soldiers.getSoldierDefenseByID(defenderID);
+			
+			let weaponMinMaxDamage = Soldiers.getSoldierWeaponMinMaxDamageByID(attackerID);
+			
+			let diceRoll = randomInteger(0, 99);
+			let hitChance = BASE_HIT_CHANCE_PERCENT + attack - defense;
+			let strengthDamageBonus = Math.floor(Soldiers.getSoldierAttribute(attackerID, ("strength")) / 5); // only in melee
+			let weaponDamage = randomInteger(weaponMinMaxDamage.min, weaponMinMaxDamage.max);
+			
+			if(diceRoll < hitChance)
+			{
+				let bodyPartHit = randomWeightedKey(BODY_PARTS_HIT_CHANCE);
+				let bodyPartDamageModifier = BODY_PARTS_DAMAGE_MODIFIER[bodyPartHit];
+				let armor = Soldiers.getSoldierArmorBodyPartByID(defenderID, bodyPartHit);
+				let damage = weaponDamage - armor;
+				if(damage < 0)
+				{
+					// min damage must be 1.
+					damage = MIN_DAMAGE;
+				}
+				damage = (damage) * bodyPartDamageModifier;
+				GUI.addParticleAbovePiece("damage", damage, Soldiers.getSoldierFormationIDByID(defenderID));
+				Soldiers.damageSoldier(defenderID, damage, attackerID);
+			}
+			
+			// add some XP
+			let weaponType = Soldiers.getSoldierWeaponTypeByID(attackerID);
+			if(weaponType) 
+			{
+				Soldiers.addSoldierSkillXP(attackerID, weaponType, 1);
+			}
+		},
+		
+		attackRangedSoldier: function(attackerID, defenderID)
 		{
 			let attack = Soldiers.getSoldierAttackByID(attackerID);
 			let defense = Soldiers.getSoldierDefenseByID(defenderID);
@@ -536,40 +694,15 @@ const Soldiers = (function()
 					damage = MIN_DAMAGE;
 				}
 				damage = (damage) * bodyPartDamageModifier;
-				//console.log(`W:${weaponDamage}|M:${bodyPartDamageModifier}|A:${armor}|D:${damage}`);
+				GUI.addParticleAbovePiece("damage", damage, Soldiers.getSoldierFormationIDByID(defenderID));
 				Soldiers.damageSoldier(defenderID, damage, attackerID);
-				// TODO: particle effect
 			}
 			
-			// TODO: XP
-		},
-		
-		attackRangedSoldier: function(attackerID, defenderID)
-		{
-			let attack = Soldiers.getSoldierAccuracyByID(attackerID);
-			let defense = Soldiers.getSoldierDefenseByID(defenderID);
-			
-			let weaponMinMaxDamage = Soldiers.getSoldierWeaponMinMaxDamageByID(attackerID);
-			
-			let diceRoll = randomInteger(0, 99);
-			let hitChance = BASE_HIT_CHANCE_PERCENT + attack - defense;
-			let weaponDamage = randomInteger(weaponMinMaxDamage.min, weaponMinMaxDamage.max);
-			
-			if(diceRoll < hitChance)
+			// add some XP
+			let weaponType = Soldiers.getSoldierWeaponTypeByID(attackerID);
+			if(weaponType) 
 			{
-				let bodyPartHit = randomWeightedKey(BODY_PARTS_HIT_CHANCE);
-				let bodyPartDamageModifier = BODY_PARTS_DAMAGE_MODIFIER[bodyPartHit];
-				let armor = Soldiers.getSoldierArmorBodyPartByID(defenderID, bodyPartHit);
-				let damage = weaponDamage - armor;
-				if(damage < 0)
-				{
-					// min damage must be 1.
-					damage = MIN_DAMAGE;
-				}
-				damage = (damage) * bodyPartDamageModifier;
-				//console.log(`W:${weaponDamage}|M:${bodyPartDamageModifier}|A:${armor}|D:${damage}`);
-				Soldiers.damageSoldier(defenderID, damage, attackerID);
-				// TODO: particle effect
+				Soldiers.addSoldierSkillXP(attackerID, weaponType, 1);
 			}
 		},
 		

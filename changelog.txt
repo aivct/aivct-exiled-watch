@@ -1,3 +1,11 @@
+0.2.11
+-added more unit stats 
+	-weapon skills and attributes!
+	-change getAttack to reflect that instead of returning the placeholder
+		-getDefense gets the same treatment
+		-and refolded accuracy back into getAttack
+	-added skills XP
+-moved particle generation to be at the ability level for consolidation
 0.2.10
 -added tooltips
 	-added tooltips for abilities

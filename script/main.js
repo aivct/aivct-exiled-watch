@@ -1,4 +1,4 @@
-const VERSION = "0.2.10"; 
+const VERSION = "0.2.11"; 
 // basic init functions
 function initialize()
 {
@@ -372,7 +372,7 @@ SpriteComposite.prototype.removeLayerByImage = function(sprite)
 
 SpriteComposite.prototype.flatten = function()
 {
-	// todo.
+	// TODO: implement
 }
 
 function SpriteCompositeLayer(sprite, x, y, width, height)

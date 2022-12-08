@@ -55,6 +55,7 @@ const Equipment = (function()
 		"dagger": {
 			"localization_string": "equipment_dagger",
 			"type": "weapon",
+			"weapon_type": "dagger",
 			"weight": 3,
 			"damage_type": "pierce",
 			"min_damage": 10,
@@ -63,6 +64,7 @@ const Equipment = (function()
 		"shortsword": {
 			"localization_string": "equipment_shortsword",
 			"type": "weapon",
+			"weapon_type": "sword",
 			"weight": 6,
 			"damage_type": "slash",
 			"min_damage": 25,
@@ -71,6 +73,7 @@ const Equipment = (function()
 		"longsword": {
 			"localization_string": "equipment_longsword",
 			"type": "weapon",
+			"weapon_type": "longsword",
 			"weight": 10,
 			"damage_type": "slash",
 			"min_damage": 40,
@@ -79,6 +82,7 @@ const Equipment = (function()
 		"simple_spear": {
 			"localization_string": "equipment_simple_spear",
 			"type": "weapon",
+			"weapon_type": "spear",
 			"weight": 3,
 			"damage_type": "pierce",
 			"min_damage": 20,
@@ -87,6 +91,7 @@ const Equipment = (function()
 		"mace": {
 			"localization_string": "equipment_mace",
 			"type": "weapon",
+			"weapon_type": "mace",
 			"weight": 8,
 			"damage_type": "blunt",
 			"min_damage": 25,
@@ -96,6 +101,7 @@ const Equipment = (function()
 		"crossbow": {
 			"localization_string": "equipment_crossbow",
 			"type": "weapon",
+			"weapon_type": "crossbow",
 			"isRanged": true,
 			"weight": 8,
 			"range": 4,
@@ -135,6 +141,10 @@ const Equipment = (function()
 		},
 	}
 	
+	const WeaponTypesStatistics = {
+		
+	}
+	
 	return {
 		initialize: function()
 		{
@@ -172,6 +182,11 @@ const Equipment = (function()
 		getEquipmentArmorTypeByKey: function(equipmentKey)
 		{
 			return Equipment.getEquipmentStatisticByKey(equipmentKey, "armor_type");
+		},
+		
+		getWeaponTypeByKey: function(equipmentKey)
+		{
+			return Equipment.getEquipmentStatisticByKey(equipmentKey, "weapon_type");
 		},
 		
 		isWeaponRangedByKey: function(equipmentKey)

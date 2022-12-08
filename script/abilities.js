@@ -12,9 +12,9 @@
 					
 	//goal
 	 attack once per turn.
-	TODO: isRanged, canHeal, etc
+	TOD
 	 
-	 factor movement OUT, or at least out in the general UI flow (perhaps make it the default null?
+	factor movement OUT, or at least out in the general UI flow (perhaps make it the default null?
 
  */
 const Abilities = (function()
