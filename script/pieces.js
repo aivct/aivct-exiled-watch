@@ -705,11 +705,7 @@ const Pieces = (function()
 			for(var index = 0; index < alivePieces.length; index++)
 			{
 				let pieceID = alivePieces[index];
-				let maxAP = Pieces.getPieceMaxAPByID(pieceID);
-				Game.setIDObjectProperty("pieces", pieceID, "AP", maxAP);
-				
-				let maxMovement = Pieces.getPieceMaxMovementByID(pieceID);
-				Game.setIDObjectProperty("pieces", pieceID, "movement", maxMovement);
+				Pieces.onPieceEndTurn(pieceID);
 			}
 			
 			// set update flag because of a significant change
@@ -717,6 +713,22 @@ const Pieces = (function()
 			GUI.updateUI();
 			
 			Metrics.addMetric("turns_played",1);
+		},
+		
+		onPieceEndTurn: function(pieceID)
+		{
+			let maxAP = Pieces.getPieceMaxAPByID(pieceID);
+			Game.setIDObjectProperty("pieces", pieceID, "AP", maxAP);
+			
+			let maxMovement = Pieces.getPieceMaxMovementByID(pieceID);
+			Game.setIDObjectProperty("pieces", pieceID, "movement", maxMovement);
+			
+			let soldiers = Pieces.getPieceSoldiersIDByID(pieceID);
+			for(let index = 0; index < soldiers.length; index++)
+			{
+				let soldierID = soldiers[index];
+				Soldiers.onSoldierEndTurn(soldierID);
+			}
 		},
 		/*
 		// TODO: perhaps we shall factor AI as its own thing someday.

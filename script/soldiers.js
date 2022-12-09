@@ -33,14 +33,11 @@
 	General progression:
 		Light Infantry -> Medium Infantry -> Heavy Infantry
 	
+	Intro scenario: ambush of armored warriors to capture their armaments.
+	
 	TODO: more indicators/animations for damage and a way for players to get more information about which armor works and which don't.
 		-I'm not going to force players to do baysesian stats, they should see on the battlefield how armor affects them.
 		
-	TODO:
-		stamina:
-			undead don't suffer from stamina problems, but are very weak.
-			greenskins/wildlings are like celts, using a lot of stamina and then becoming weak
-			human legions must manage stamina, but their tactics can conserve quite a bit of stamina.
 	TODO:
 		unify body parts. redesign and finish design for body parts.
 	TODO:
@@ -60,6 +57,8 @@
 				You're still only going to have a limited amount of shiny plate knights, so use it wisely!
 		-Oh, and return equipment to armory of respective teams after war.
 	
+	TODO: just reimplement BB layers
+	
 	? Tower Defense ?
  */
 const Soldiers = (function()
@@ -73,6 +72,10 @@ const Soldiers = (function()
 	const MAX_ATTRIBUTE = 100;
 	const BASE_WEAPON_SKILL = 30;
 	const MAX_WEAPON_SKILL = 100;
+	
+	const BASE_ATTACK_FATIGUE_COST = 10;
+	const BASE_ENDTURN_FATIGUE = 5;
+	const BASE_FATIGUE_STAGE = 50;
 	
 	/*
 		Hitchance:
@@ -336,6 +339,37 @@ const Soldiers = (function()
 			return Game.getIDObjectProperty("soldiers", soldierID, "fatigue");
 		},
 		
+		// how much fatigue a soldier can handle
+		getSoldierFatigueStageCapacityByID: function(soldierID)
+		{
+			let capacity = BASE_FATIGUE_STAGE;
+			capacity += Soldiers.getSoldierAttribute(soldierID, "endurance");
+			return capacity;
+		},
+		
+		getSoldierFatigueStageByID: function(soldierID)
+		{
+			let fatigue = Soldiers.getSoldierFatigueByID(soldierID);
+			let stageCapacity = Soldiers.getSoldierFatigueStageCapacityByID(soldierID);
+			
+			if(fatigue < stageCapacity)
+			{
+				return 0; // rested 
+			}
+			else if(fatigue < stageCapacity * 2)
+			{
+				return 1; // winded
+			}
+			else if(fatigue < stageCapacity * 3)
+			{
+				return 2; // tired
+			}
+			else 
+			{
+				return 3; // exhausted
+			}
+		},
+		
 		getSoldierAttackByID: function(soldierID)
 		{
 			let attack = 0;
@@ -349,6 +383,13 @@ const Soldiers = (function()
 				let weaponSkill = Soldiers.getSoldierSkill(soldierID, weaponType);
 				attack += weaponSkill/4;
 			}
+			// diminish attack base on fatigue 
+			let fatiguePenalty = Soldiers.getSoldierFatigueStageByID(soldierID);
+			if(fatiguePenalty > 0)
+			{
+				attack *= (1 - 0.10 * fatiguePenalty);
+			}
+			
 			return attack;
 		},
 		
@@ -625,6 +666,15 @@ const Soldiers = (function()
 			Game.setIDObjectProperty("soldiers", soldierID, "HP", maxHP);
 		},
 		
+		changeSoldierFatigue: function(soldierID, value)
+		{
+			let oldValue = Soldiers.getSoldierFatigueByID(soldierID);
+			let newValue = oldValue + value;
+			if(newValue < 0) newValue = 0; // it's fine, likely end turn fatigue
+			
+			Game.setIDObjectProperty("soldiers", soldierID, "fatigue", newValue);
+		},
+		
 		killSoldier: function(soldierID, killerID)
 		{
 			let pieceID = Soldiers.getSoldierFormationIDByID(soldierID);
@@ -663,12 +713,17 @@ const Soldiers = (function()
 				Soldiers.damageSoldier(defenderID, damage, attackerID);
 			}
 			
+			// add some fatigue
+			Soldiers.changeSoldierFatigue(attackerID, BASE_ATTACK_FATIGUE_COST);
+			
 			// add some XP
 			let weaponType = Soldiers.getSoldierWeaponTypeByID(attackerID);
 			if(weaponType) 
 			{
 				Soldiers.addSoldierSkillXP(attackerID, weaponType, 1);
 			}
+			
+			
 		},
 		
 		attackRangedSoldier: function(attackerID, defenderID)
@@ -698,6 +753,9 @@ const Soldiers = (function()
 				Soldiers.damageSoldier(defenderID, damage, attackerID);
 			}
 			
+			// add some fatigue
+			Soldiers.changeSoldierFatigue(attackerID, BASE_ATTACK_FATIGUE_COST);
+			
 			// add some XP
 			let weaponType = Soldiers.getSoldierWeaponTypeByID(attackerID);
 			if(weaponType) 
@@ -706,9 +764,10 @@ const Soldiers = (function()
 			}
 		},
 		
-		onEndTurn: function()
+		onSoldierEndTurn: function(soldierID)
 		{
-			// TODO: handle status effects
+			// fatigue 
+			Soldiers.changeSoldierFatigue(soldierID, -BASE_ENDTURN_FATIGUE);
 		},
 		
 		/* Metrics */

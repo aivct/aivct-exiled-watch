@@ -1,3 +1,7 @@
+0.2.12
+-added fatigue
+	-exhausted soldiers fight worse.
+	-all soldiers recover some fatigue on end turn.
 0.2.11
 -added more unit stats 
 	-weapon skills and attributes!
