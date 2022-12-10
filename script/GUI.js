@@ -874,6 +874,8 @@ const GUI = (function()
 					default:
 						// draw movement map
 						let movementMap = Pieces.getValidMovementMap(selectedPieceID);
+						//let movementMap = Board.calculateTilePathfindingDistanceMapByIndex(Pieces.getPiecePositionByID(selectedPieceID), -1);
+						//let movementMap = Board.findPathByIndex(Pieces.getPiecePositionByID(selectedPieceID), 0);
 						context.strokeStyle = "blue";
 						context.fillStyle = "blue";
 						for(var tileIndex in movementMap)

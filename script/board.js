@@ -253,9 +253,83 @@ const Board = (function()
 		calculatePathfindingDistanceByIndex: function(originIndex, destinationIndex)
 		{
 			// TODO: quit being lazy and actually implement a more efficient algorithm.
-			let map = Board.calculateTilePathfindingDistanceMapByIndex(originIndex, -1);
+			let map = Board.findPathByIndex(originIndex, destinationIndex);
 			
 			return map[destinationIndex]; // undefined is a valid null-sy value, unfortunately.
+		},
+		
+		/**
+			A* implementation.
+			It's much faster because we're searching less values and taking a heuristic direct approach.
+			
+			// TODO: Prune and return a dict of the direct path to destination.
+		 */
+		findPathByIndex: function(originIndex, destinationIndex)
+		{
+			let tiles = Game.getState("map","tiles");
+			let tilesDistance = {};
+			tilesDistance[originIndex] = 0;
+			let path = {};
+			
+			let tilesToVisit = [];
+			let tileToVisit = originIndex;
+			
+			let destinationReachedFlag = false;
+			do
+			{
+				let tileDistance = tilesDistance[tileToVisit];
+				let neighbours = Board.getNeighboursIndexByIndex(tileToVisit);
+				
+				for(let neighbourCount = 0; neighbourCount < neighbours.length; neighbourCount++)
+				{
+					let distance = tileDistance + 1;
+					
+					let neighbour = neighbours[neighbourCount];
+					if(!Board.isTileValidDestinationByIndex(neighbour)) continue;
+					
+					if(tilesDistance[neighbour] === undefined)
+					{
+						// don't repeat a visited tile.
+						tilesToVisit.push(neighbour);
+					}
+					if(tilesDistance[neighbour] === undefined || tilesDistance[neighbour] > distance)
+					{
+						tilesDistance[neighbour] = distance;
+						// if we visit the destination, then we're done here!
+						if(neighbour === destinationIndex) 
+						{
+							destinationReachedFlag = true;
+							break;
+						}
+					}
+				}
+				
+				// quick and dirty sort to find the closest neighbour every time
+				// swap min heuristic, where heuristic is the distance function.
+				let minDistanceToDestination;
+				let minDistanceIndex;
+				for(let index = 0; index < tilesToVisit.length; index++)
+				{
+					let currentTile = tilesToVisit[index];
+					let distanceToDestination = Board.calculateDistanceToTileByIndex(currentTile, destinationIndex);
+					if(distanceToDestination < minDistanceToDestination || minDistanceToDestination === undefined)
+					{
+						minDistanceToDestination = distanceToDestination;
+						minDistanceIndex = index;
+					}
+				}
+				// swap first element so that it is shifted first.
+				if(minDistanceIndex !== 0)
+				{
+					let swapValue = tilesToVisit[0];
+					tilesToVisit[0] = tilesToVisit[minDistanceIndex];
+					tilesToVisit[minDistanceIndex] = swapValue;
+				}
+				
+			}
+			while ( (tileToVisit = tilesToVisit.shift()) !== undefined && !destinationReachedFlag );
+			
+			return tilesDistance;
 		},
 		
 		/* 

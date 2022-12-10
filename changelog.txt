@@ -1,3 +1,5 @@
+0.2.13
+-optimized pathfinding somewhat using heuristic A* instead of... a giant sledgehammer.
 0.2.12
 -added fatigue
 	-exhausted soldiers fight worse.
