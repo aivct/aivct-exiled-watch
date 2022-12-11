@@ -1,4 +1,4 @@
-const VERSION = "0.2.13"; 
+const VERSION = "0.2.14"; 
 // basic init functions
 function initialize()
 {
@@ -106,6 +106,7 @@ var Assets = (function()
 	
 	var onImageFailed = (event) => {
 		console.warn(`Image not found: ${event.target.src}.`);
+		console.log(event);
 		imageProcessedCount++;
 		checkIfAllImagesAreLoaded();
 	};
@@ -124,6 +125,7 @@ var Assets = (function()
 				let imagePromise = new Promise((resolve, reject) =>
 				{
 					let image = new Image();
+					image.crossOrigin = "Anonymous";
 					
 					image.addEventListener('load', resolve);
 					image.addEventListener('error', reject);
@@ -262,19 +264,71 @@ CanvasLayer.prototype.update = function()
 function Sprite(image)
 {
 	this.image = image;
+	this.isRecolored = false;
+	this.imageRecolored = null;
 }
+
+Sprite.prototype.clone = function()
+{
+	return new Sprite(this.image);
+}
+
+// todo: clone its transformation
 
 Sprite.prototype.draw = function(context,x,y,width,height)
 {
 	// if width or height is 0, nothing is drawn anyways
+	let image = this.image;
+	if(this.isRecolored) image = this.imageRecolored;
+	
 	if(!width || !height) 
 	{
-		context.drawImage(this.image, x, y);
+		context.drawImage(image, x, y);
 	}
 	else 
 	{
-		context.drawImage(this.image, x, y, width, height);
+		context.drawImage(image, x, y, width, height);
 	}
+}
+
+/**
+	Recolors the entire original image to the new color.
+	TODO: add tolerance and a specific target color to hunt for.
+	@param newColor - a [4] array of [R, G, B, A] for colors in a specific pixel, each between 0 and 255.
+ */
+Sprite.prototype.recolor = function(newColor, hardness = 1)
+{
+	if(!this.image) return; // image obviously failed to load, but luckily enough that is already a warning.
+	// lazy create canvas.
+	if(!this.isRecolored)
+	{
+		this.isRecolored = true;
+		this.imageRecolored = document.createElement("canvas");
+		this.imageRecolored.width = this.image.width;
+		this.imageRecolored.height = this.image.height;
+	}
+	let context = this.imageRecolored.getContext("2d"); 
+	let width = this.image.width;
+	let height = this.image.height;
+	
+	context.clearRect(0,0,width,height);
+	context.drawImage(this.image,0,0);
+	
+	let imageData = context.getImageData(0, 0, width, height);
+	console.log(imageData);
+	let pixelArray = imageData.data;
+	// remember the data looks like [R,G,B,A,R,G,B,A...] which is why we must increment by 4.
+	for(let index = 0, length = pixelArray.length; index < length; index+=4)
+	{
+		// modify each pixel according to recolor formula
+		pixelArray[index] = pixelArray[index]-Math.floor((pixelArray[index]-newColor[0])*hardness);
+		pixelArray[index+1] = pixelArray[index+1]-Math.floor((pixelArray[index+1]-newColor[1])*hardness);
+		pixelArray[index+2] = pixelArray[index+2]-Math.floor((pixelArray[index+2]-newColor[2])*hardness);
+		// ignore alpha for now
+		if(newColor[3] !== undefined) pixelArray[index+3] = pixelArray[index+3]-Math.floor((pixelArray[index+3]-newColor[3])*hardness);
+	}
+	
+	context.putImageData(imageData, 0, 0);
 }
 
 Sprite.prototype.getWidth = function()

@@ -1,3 +1,7 @@
+0.2.14
+-Note, this BREAKS loading the game from the file system due to CORS and images.
+	-we are now allowing images to be manipulated on Canvas. Due to a security error, it is necessary to host from a server.
+-added recolor function for sprites
 0.2.13
 -optimized pathfinding somewhat using heuristic A* instead of... a giant sledgehammer.
 0.2.12

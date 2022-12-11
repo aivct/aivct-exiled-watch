@@ -139,11 +139,13 @@ const GUI = (function()
 			unitDesignerElement = GUI.createUnitDesignerElement();
 			GUIContainer.appendChild(unitDesignerElement);
 			
-			// TEMP
 			unitDesignerElement.style.display = "none";
 			
 			tooltipElement = GUI.createTooltipElement();
 			GUIContainer.appendChild(tooltipElement);
+			
+			// TEST
+			//Assets.getImage("spearman").recolor([255,255,255]);
 			
 			document.body.appendChild(GUIContainer);
 		},
