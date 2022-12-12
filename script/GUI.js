@@ -101,6 +101,7 @@ const GUI = (function()
 		
 		createGUI: function()
 		{
+			// TODO: move pointer events from document to canvas container
 			document.body.addEventListener("pointerdown",GUI.handlePointerdown, false);
 			document.body.addEventListener("pointerup",GUI.handlePointerup, false);
 			document.body.addEventListener("pointermove",GUI.handlePointermove, false);
@@ -125,7 +126,6 @@ const GUI = (function()
 			effectsLayer = GUI.createEffectsLayer();
 			GUIContainer.appendChild(effectsLayer.getCanvas());
 			
-			
 			// DOM elements 
 			//unitBuyerElement = GUI.createUnitBuyerElement();
 			//GUIContainer.appendChild(unitBuyerElement);
@@ -138,12 +138,15 @@ const GUI = (function()
 			
 			unitDesignerElement = GUI.createUnitDesignerElement();
 			GUIContainer.appendChild(unitDesignerElement);
-			
 			unitDesignerElement.style.display = "none";
 			
 			tooltipElement = GUI.createTooltipElement();
 			GUIContainer.appendChild(tooltipElement);
-			
+			tooltipElement.style.display = "none";
+
+			let testPanel = new BPanel();
+			GUIContainer.appendChild(testPanel.getElement());
+			testPanel.setBorderImage(Assets.getImage("border_800x600"));
 			// TEST
 			//Assets.getImage("spearman").recolor([255,255,255]);
 			
@@ -349,8 +352,10 @@ const GUI = (function()
 		{
 			let element = document.createElement("div");
 			element.style.position = "absolute";
-			element.style.top = "0";
-			element.style.left = "0";
+			element.style.top = "50px";
+			element.style.left = "100px";
+			element.style.width = "600px";
+			element.style.height = "500px";
 			element.classList.add("gui-element");
 			
 			// equipment viewer 

@@ -1,3 +1,6 @@
+0.3.0
+-proof of concept for click panes in GUI. Begin graphics overhaul.
+-fixed soldiers attack after running out of enemies bug
 0.2.14
 -Note, this BREAKS loading the game from the file system due to CORS and images.
 	-we are now allowing images to be manipulated on Canvas. Due to a security error, it is necessary to host from a server.

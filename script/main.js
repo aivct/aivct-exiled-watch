@@ -1,4 +1,4 @@
-const VERSION = "0.2.14"; 
+const VERSION = "0.3.0"; 
 // basic init functions
 function initialize()
 {
@@ -60,6 +60,10 @@ var Assets = (function()
 		},
 		"ability_sleep": {
 			"src": "./assets/ability_sleep.png",
+			"type": "sprite",
+		},
+		"border_800x600": {
+			"src": "./assets/border_800x600.png",
 			"type": "sprite",
 		},
 		"XP_ranks_sheet": {
@@ -275,7 +279,7 @@ Sprite.prototype.clone = function()
 
 // todo: clone its transformation
 
-Sprite.prototype.draw = function(context,x,y,width,height)
+Sprite.prototype.draw = function(context,x=0,y=0,width,height)
 {
 	// if width or height is 0, nothing is drawn anyways
 	let image = this.image;
@@ -439,6 +443,96 @@ function SpriteCompositeLayer(sprite, x, y, width, height)
 }
 
 /**
-	Since there is no easy way to recolor sprites in JS,
-	a recolored sprite literally takes an entire canvas.
+	We call this the three pane UI system, or the 3 B's.
+	
+	                      |\
+	                      | \
+	           |\         |  \
+	           | \        |   \
+	|\         |  \       | B  \
+	| \        |   \      |  A  \
+	|  \       | B  \      \  C  \
+	|   \      |  O  \      \  K  \
+	| B  \      \  D  \      \     |
+	|  O  \      \  Y  \      \    |
+	 \  R  \      \     |      \   |
+	  \  D  \      \    |       \  |
+	   \  E  |      \   |        \ |
+	    \  R |       \  |         \|
+		 \   |        \ |        
+		  \  |         \|         
+		   \ |
+		    \|
+			
+	Every DOM panel has these three parts.
+	 - The Border is displayed in front and does NOT respond to clicks
+	 - The Body is the content in the middle
+	 - The Background is what's displayed behind, and also does not respond to clicks.
+	The trick is that all three panes can be <canvas>'s, though idealy the body is DOM so as to meet accessibility standards.
+	
+	At the fundemental level, these are just containers that we put DOM in; 
+	At a practical level, this is glue code to make that process easier. 
+		What this means is that you can still do stuff directly on the DOM.
  */
+function BPanel()
+{
+	this.container = document.createElement("div");
+	this.container.style.position = "relative";
+	this.container.style.width = "100%";
+	this.container.style.height = "100%";
+	this.container.classList.add("b-panel-container");
+	
+	this.borderPane = document.createElement("div");
+	this.borderPane.style.position = "absolute";
+	this.borderPane.style.top = "0";
+	this.borderPane.style.left = "0";
+	this.borderPane.style.width = "100%";
+	this.borderPane.style.height = "100%";
+	this.borderPane.style["pointer-events"] = "none"; // click propagation
+	this.borderPane.classList.add("b-pane");
+	this.container.appendChild(this.borderPane);
+	this.borderCanvas = document.createElement("canvas");
+	this.borderCanvas.width = 800;
+	this.borderCanvas.height = 600;
+	this.borderPane.appendChild(this.borderCanvas);
+	
+	this.bodyPane = document.createElement("div");
+	this.bodyPane.style.position = "absolute";
+	this.bodyPane.style.top = "0";
+	this.bodyPane.style.left = "0";
+	this.bodyPane.style.width = "100%";
+	this.bodyPane.style.height = "100%";
+	this.bodyPane.classList.add("b-pane");
+	this.container.appendChild(this.bodyPane);
+	
+	this.backPane = document.createElement("div");
+	this.backPane.style.position = "absolute";
+	this.backPane.style.top = "0";
+	this.backPane.style.left = "0";
+	this.backPane.style.width = "100%";
+	this.backPane.style.height = "100%";
+	this.backPane.style["pointer-events"] = "none"; // click propagation
+	this.backPane.classList.add("b-pane");
+	this.container.appendChild(this.backPane);
+}
+
+BPanel.prototype.getElement = function()
+{
+	return this.container;
+}
+
+BPanel.prototype.appendChild = function(element)
+{
+	
+}
+
+BPanel.prototype.setBorderImage = function(sprite)
+{
+	let context = this.borderCanvas.getContext("2d");
+	sprite.draw(context);
+}
+
+BPanel.prototype.setBackground = function(element)
+{
+	
+}

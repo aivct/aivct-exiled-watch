@@ -508,6 +508,11 @@ const Pieces = (function()
 				let attackerSoldierID = attackerSoldiers[soldierIndex];
 				let defenderSoldierID = randomElementInArray(defenderSoldiers);
 				
+				// the defender array is a reference to the SAME array as the one in the other piece, and thus updates dynamically with kills.
+				// this means it's possible to run out of soldiers.
+				// if no valid soldiers, then just forget it.
+				if(!defenderSoldierID) continue;
+				
 				// TODO: fix. it introduces weird bugs with melee ranged attacks.
 				if(distance === 1)
 				{
