@@ -28,6 +28,7 @@ const GUI = (function()
 	var equipmentViewerElement;
 	var statisticsArmorElement;
 	
+	var canvasPanel;
 	var mapLayer;
 	var unitsLayer;
 	var effectsLayer;
@@ -36,7 +37,10 @@ const GUI = (function()
 	// TODO: move effects to UI and add particles + particle combination
 	
 	// TODO: implement resizing
-	var canvasWidth = 800;
+	var containerWidth = 800;
+	var containerHeight = 600;
+	
+	var canvasWidth = 600;
 	var canvasHeight = 600;
 	
 	// Square font should be in multiples of 6, though font height is 5, due to odd quirks in generation
@@ -101,40 +105,43 @@ const GUI = (function()
 		
 		createGUI: function()
 		{
-			// TODO: move pointer events from document to canvas container
-			document.body.addEventListener("pointerdown",GUI.handlePointerdown, false);
-			document.body.addEventListener("pointerup",GUI.handlePointerup, false);
-			document.body.addEventListener("pointermove",GUI.handlePointermove, false);
-			document.body.addEventListener("keydown",GUI.handleKeydown, false);
-			document.body.addEventListener("keyup",GUI.handleKeyup, false);
-			
 			GUIContainer = document.createElement("div");
-			GUIContainer.style.width = `${canvasWidth}px`;
-			GUIContainer.style.height = `${canvasHeight}px`;
+			GUIContainer.style.width = `${containerWidth}px`;
+			GUIContainer.style.height = `${containerHeight}px`;
 			GUIContainer.classList.add("gui-container");
 			GUIContainer.style.position = "relative";
 			
+			// create the main canvas
+			canvasPanel = new BPanel(600,600);
+			GUIContainer.appendChild(canvasPanel.getElement());
+			canvasPanel.getElement().style.position = "absolute";
+			canvasPanel.getElement().style.left = "200px";
+			canvasPanel.getElement().style.top = "0";
+			canvasPanel.setBorderImage(Assets.getImage("border_600x600"));
+			
+			// TODO: move all events from document to canvas container
+			canvasPanel.getElement().addEventListener("pointerdown",GUI.handlePointerdown, false);
+			canvasPanel.getElement().addEventListener("pointerup",GUI.handlePointerup, false);
+			canvasPanel.getElement().addEventListener("pointermove",GUI.handlePointermove, false);
+			document.body.addEventListener("keydown",GUI.handleKeydown, false);
+			document.body.addEventListener("keyup",GUI.handleKeyup, false);
+			
+			
 			mapLayer = GUI.createMapLayer();
-			GUIContainer.appendChild(mapLayer.getCanvas());
-			
+			canvasPanel.appendChild(mapLayer.getCanvas());
 			UILayer = GUI.createUILayer();
-			GUIContainer.appendChild(UILayer.getCanvas());
-			
+			canvasPanel.appendChild(UILayer.getCanvas());
 			unitsLayer = GUI.createUnitsLayer();
-			GUIContainer.appendChild(unitsLayer.getCanvas());
-			
+			canvasPanel.appendChild(unitsLayer.getCanvas());
 			effectsLayer = GUI.createEffectsLayer();
-			GUIContainer.appendChild(effectsLayer.getCanvas());
+			canvasPanel.appendChild(effectsLayer.getCanvas());
 			
 			// DOM elements 
 			//unitBuyerElement = GUI.createUnitBuyerElement();
 			//GUIContainer.appendChild(unitBuyerElement);
 			
 			abilityToolbarElement = GUI.createAbilityToolbarElement();
-			GUIContainer.appendChild(abilityToolbarElement);
-			
 			endTurnButtonElement = GUI.createEndTurnButtonElement();
-			GUIContainer.appendChild(endTurnButtonElement);
 			
 			unitDesignerElement = GUI.createUnitDesignerElement();
 			GUIContainer.appendChild(unitDesignerElement);
@@ -143,10 +150,15 @@ const GUI = (function()
 			tooltipElement = GUI.createTooltipElement();
 			GUIContainer.appendChild(tooltipElement);
 			tooltipElement.style.display = "none";
+			tooltipElement.style.zIndex = "999"; // tooltips above all
 
-			let testPanel = new BPanel();
-			GUIContainer.appendChild(testPanel.getElement());
-			testPanel.setBorderImage(Assets.getImage("border_800x600"));
+			let toolbarPanel = new BPanel(200,600);
+			GUIContainer.appendChild(toolbarPanel.getElement());
+			toolbarPanel.setBorderImage(Assets.getImage("border_200x600"));
+			
+			toolbarPanel.appendChild(abilityToolbarElement);
+			toolbarPanel.appendChild(endTurnButtonElement);
+			
 			// TEST
 			//Assets.getImage("spearman").recolor([255,255,255]);
 			
@@ -288,8 +300,8 @@ const GUI = (function()
 				let clientY = elementBounds.top;
 				let width = elementBounds.width;
 				let height = elementBounds.height;
-				
-				GUI.setTooltip(tooltipContent, clientX + width - bounds.x , clientY - bounds.y);
+				console.log(elementBounds);
+				GUI.setTooltip(tooltipContent, clientX + width , clientY);
 			};
 			
 			element.onmouseleave = (event) => { GUI.hideTooltip() };
@@ -1052,7 +1064,7 @@ const GUI = (function()
 		
 		handlePointerdown: function(event)
 		{
-			bounds = GUIContainer.getBoundingClientRect();
+			let bounds = canvasPanel.getElement().getBoundingClientRect();
 	
 			var pointerX = event.clientX - bounds.x;
 			var pointerY = event.clientY - bounds.y;
@@ -1067,7 +1079,7 @@ const GUI = (function()
 		
 		handlePointerup: function(event)
 		{
-			bounds = GUIContainer.getBoundingClientRect();
+			let bounds = canvasPanel.getElement().getBoundingClientRect();
 	
 			var pointerX = event.clientX - bounds.x;
 			var pointerY = event.clientY - bounds.y;
@@ -1090,7 +1102,7 @@ const GUI = (function()
 		
 		handlePointermove: function(event)
 		{
-			bounds = GUIContainer.getBoundingClientRect();
+			let bounds = canvasPanel.getElement().getBoundingClientRect();
 	
 			var pointerX = event.clientX - bounds.x;
 			var pointerY = event.clientY - bounds.y;

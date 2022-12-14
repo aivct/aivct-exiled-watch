@@ -1,3 +1,7 @@
+0.3.1
+-continued general UI redesign
+	-except for some minor issues with the original design, changing UI was a breeze!
+	-decoupling rendering and adding APIs between logic and rendering was the best decision I ever made.
 0.3.0
 -proof of concept for click panes in GUI. Begin graphics overhaul.
 -fixed soldiers attack after running out of enemies bug

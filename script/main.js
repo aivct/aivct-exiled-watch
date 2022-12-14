@@ -1,4 +1,4 @@
-const VERSION = "0.3.0"; 
+const VERSION = "0.3.1"; 
 // basic init functions
 function initialize()
 {
@@ -64,6 +64,14 @@ var Assets = (function()
 		},
 		"border_800x600": {
 			"src": "./assets/border_800x600.png",
+			"type": "sprite",
+		},
+		"border_600x600": {
+			"src": "./assets/border_600x600.png",
+			"type": "sprite",
+		},
+		"border_200x600": {
+			"src": "./assets/border_200x600.png",
 			"type": "sprite",
 		},
 		"XP_ranks_sheet": {
@@ -474,13 +482,35 @@ function SpriteCompositeLayer(sprite, x, y, width, height)
 	At a practical level, this is glue code to make that process easier. 
 		What this means is that you can still do stuff directly on the DOM.
  */
-function BPanel()
+function BPanel(width = 800, height = 600)
 {
+	this.width = width;
+	this.height = height;
+	
 	this.container = document.createElement("div");
 	this.container.style.position = "relative";
-	this.container.style.width = "100%";
-	this.container.style.height = "100%";
+	this.container.style.width = `${width}px`;
+	this.container.style.height = `${height}px`;
 	this.container.classList.add("b-panel-container");
+	
+	this.backPane = document.createElement("div");
+	this.backPane.style.position = "absolute";
+	this.backPane.style.top = "0";
+	this.backPane.style.left = "0";
+	this.backPane.style.width = "100%";
+	this.backPane.style.height = "100%";
+	this.backPane.style["pointer-events"] = "none"; // click propagation
+	this.backPane.classList.add("b-pane");
+	this.container.appendChild(this.backPane);
+	
+	this.bodyPane = document.createElement("div");
+	this.bodyPane.style.position = "absolute";
+	this.bodyPane.style.top = "0";
+	this.bodyPane.style.left = "0";
+	this.bodyPane.style.width = "100%";
+	this.bodyPane.style.height = "100%";
+	this.bodyPane.classList.add("b-pane");
+	this.container.appendChild(this.bodyPane);
 	
 	this.borderPane = document.createElement("div");
 	this.borderPane.style.position = "absolute";
@@ -492,28 +522,9 @@ function BPanel()
 	this.borderPane.classList.add("b-pane");
 	this.container.appendChild(this.borderPane);
 	this.borderCanvas = document.createElement("canvas");
-	this.borderCanvas.width = 800;
-	this.borderCanvas.height = 600;
+	this.borderCanvas.width = width;
+	this.borderCanvas.height = height;
 	this.borderPane.appendChild(this.borderCanvas);
-	
-	this.bodyPane = document.createElement("div");
-	this.bodyPane.style.position = "absolute";
-	this.bodyPane.style.top = "0";
-	this.bodyPane.style.left = "0";
-	this.bodyPane.style.width = "100%";
-	this.bodyPane.style.height = "100%";
-	this.bodyPane.classList.add("b-pane");
-	this.container.appendChild(this.bodyPane);
-	
-	this.backPane = document.createElement("div");
-	this.backPane.style.position = "absolute";
-	this.backPane.style.top = "0";
-	this.backPane.style.left = "0";
-	this.backPane.style.width = "100%";
-	this.backPane.style.height = "100%";
-	this.backPane.style["pointer-events"] = "none"; // click propagation
-	this.backPane.classList.add("b-pane");
-	this.container.appendChild(this.backPane);
 }
 
 BPanel.prototype.getElement = function()
@@ -523,7 +534,12 @@ BPanel.prototype.getElement = function()
 
 BPanel.prototype.appendChild = function(element)
 {
-	
+	if(!element)
+	{
+		console.warn(`BPanel.prototype.appendChild: invalid element ${element}.`);
+		return;
+	}
+	this.bodyPane.appendChild(element);
 }
 
 BPanel.prototype.setBorderImage = function(sprite)
