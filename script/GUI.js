@@ -10,6 +10,7 @@
 		- and translate pixels back into data.
 		
 	TODO: cull drawing if not visible (if bounding box is outside of view, ex).
+	TODO: max scroll outside
  */
 const GUI = (function()
 {
@@ -686,7 +687,7 @@ const GUI = (function()
 				}
 			}
 			 */
-			 
+			 /*
 			// movement indicator
 			let movementBarRatio = Pieces.getPieceMovementByID(ID) / Pieces.getPieceMaxMovementByID(ID);
 			
@@ -695,15 +696,15 @@ const GUI = (function()
 			
 			context.fillStyle = "#00FF00";
 			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize, tileSize * movementBarRatio, 2);
-			
+			*/
 			// AP indicator
 			let APBarRatio = Pieces.getPieceAPByID(ID) / Pieces.getPieceMaxAPByID(ID);
 			
 			context.fillStyle = "#9E8B00";
-			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize + 4, tileSize, 3);
+			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize, tileSize, 3);
 			
 			context.fillStyle = "#FAFF00";
-			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize + 4, tileSize * APBarRatio, 2);
+			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize, tileSize * APBarRatio, 2);
 			
 			// HP Bars, one big bar instead
 			let soldiers = Pieces.getPieceSoldiersIDByID(ID);
@@ -728,7 +729,7 @@ const GUI = (function()
 				context.fillRect(canvasPosition.x + leftX, canvasPosition.y + tileSize - 4, barSize * HPBarRatio, 2);
 				*/
 			}
-			let HPBarRatio = totalHP / totalMaxHP;
+			let HPBarRatio = totalHP / totalMaxHP; // TODO: maxHP should be totalINITIALMaxHP
 			
 			context.fillStyle = "#7b0404";
 			context.fillRect(canvasPosition.x, canvasPosition.y + tileSize - 4, tileSize, 3);
@@ -891,16 +892,19 @@ const GUI = (function()
 						break;
 					case "ability_move":
 					default:
-						// draw movement map
-						let movementMap = Pieces.getValidMovementMap(selectedPieceID);
-						//let movementMap = Board.calculateTilePathfindingDistanceMapByIndex(Pieces.getPiecePositionByID(selectedPieceID), -1);
-						//let movementMap = Board.findPathByIndex(Pieces.getPiecePositionByID(selectedPieceID), 0);
-						context.strokeStyle = "blue";
-						context.fillStyle = "blue";
-						for(var tileIndex in movementMap)
+						if(selectedPieceAP > 0)
 						{
-							GUI.drawHighlightedTile(context, tileIndex);
-							GUI.debugDrawTileText(context, tileIndex, movementMap[tileIndex]);
+							// draw movement map
+							let movementMap = Pieces.getValidMovementMap(selectedPieceID);
+							//let movementMap = Board.calculateTilePathfindingDistanceMapByIndex(Pieces.getPiecePositionByID(selectedPieceID), -1);
+							//let movementMap = Board.findPathByIndex(Pieces.getPiecePositionByID(selectedPieceID), 0);
+							context.strokeStyle = "blue";
+							context.fillStyle = "blue";
+							for(var tileIndex in movementMap)
+							{
+								GUI.drawHighlightedTile(context, tileIndex);
+								GUI.debugDrawTileText(context, tileIndex, movementMap[tileIndex]);
+							}
 						}
 						break;
 				}

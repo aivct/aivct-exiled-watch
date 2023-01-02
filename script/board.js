@@ -263,6 +263,7 @@ const Board = (function()
 			It's much faster because we're searching less values and taking a heuristic direct approach.
 			
 			// TODO: Prune and return a dict of the direct path to destination.
+			TODO: if destination is occupied, check neighbours instead. If neighbours are also occupied, then just give up.
 		 */
 		findPathByIndex: function(originIndex, destinationIndex)
 		{

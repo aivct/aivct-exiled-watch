@@ -27,6 +27,10 @@
 	
 	TODO: Auto-retreat. If a soldier's HP is below X, then they will move to reserves.
 	TODO: fix recalculating PIECE convenient stats when adding equipment to a SOLDIER
+	
+	TODO: Remove AP. Replace with ORDER system. One ORDER per turn.
+	Orders: Move. Attack. Ranged.
+	Movement in Melee leads to ENGAGEment.
  */
 const Pieces = (function()
 {
@@ -64,11 +68,12 @@ const Pieces = (function()
 			piece.position = null;
 			piece.AP = MAX_AP;
 			piece.movement = 1;
-			piece.maxMovement = 0;
+			piece.maxMovement = 0; // TODO: factor out
 			
 			piece.isDead = false;
 			piece.killedByID = null;
 			piece.team = team;
+			
 			
 			piece.soldiers = [];
 			/*
@@ -85,6 +90,8 @@ const Pieces = (function()
 			piece.totalDamageReceived = 0;
 			piece.totalDamageHealed = 0;
 			piece.totalTilesMoved = 0;
+			// temp & AI
+			piece.target = null;
 			return piece;
 		},
 		
@@ -120,6 +127,59 @@ const Pieces = (function()
 			let livingPiecesID = (livingPieces).map(piece => {return piece.ID});
 			return livingPiecesID;
 		},
+		
+		getEnemyPiecesIDByTeam: function(team)
+		{
+			// bodge for now 
+			let enemyTeamID = 0;
+			if(team === 1) enemyTeamID = 2;
+			if(team === 2) enemyTeamID = 1;
+			
+			let enemyPieces = Pieces.getTeamPiecesID(enemyTeamID);
+			return enemyPieces;
+		},
+		
+		getPieceClosestEnemyPieceID: function(pieceID)
+		{
+			if(Pieces.getPiecePositionByID(pieceID) === null)
+			{
+				console.warn(`Pieces.getClosestEnemyPieceID: pieceID "${pieceID}" has a null position. Doing nothing...`);
+				return;
+			}
+			let team = Pieces.getPieceTeamByID(pieceID);
+			
+			let enemyPiecesID = Pieces.getEnemyPiecesIDByTeam(team);
+			
+			let minDistance;
+			let minDistanceID;
+			
+			for(let index = 0; index < enemyPiecesID.length; index++)
+			{
+				let enemyPieceID = enemyPiecesID[index];
+								
+				let distance = Pieces.getDistanceBetweenTwoPiecesByID(pieceID, enemyPieceID);
+				if(distance === null) continue; // obviously the enemy isn't deployed yet, and we already checked to see if our piece is null position
+				
+				if(!minDistance || distance < minDistance)
+				{
+					minDistance = distance;
+					minDistanceID = enemyPieceID;
+				}
+			}
+			return minDistanceID;
+		},
+		
+		getDistanceBetweenTwoPiecesByID: function(firstPieceID, secondPieceID)
+		{
+			let firstPosition = Pieces.getPiecePositionByID(firstPieceID);
+			let secondPosition = Pieces.getPiecePositionByID(secondPieceID);
+			
+			if(!firstPosition || !secondPosition) return null;
+			
+			// TODO: note, we use taxicab instead of pathfinding distance for now, but this may lead to some weird things down the road.
+			return Board.calculateDistanceToTileByIndex(firstPieceID, secondPieceID);
+		},
+		
 		/*
 		getPieceImageByID: function(pieceID)
 		{
@@ -637,6 +697,44 @@ const Pieces = (function()
 			return movementMap;
 		},
 		
+		getClosestPartialPathPosition: function(pieceID, destinationPosition)
+		{
+			let piecePosition = Pieces.getPiecePositionByID(pieceID);
+			let path = Board.findPathByIndex(piecePosition, destinationPosition); 
+			let reversePath = Board.findPathByIndex(destinationPosition, piecePosition); // this doubles as a distanceToMap to save us from excess calculations
+			// note that if the destination path is already occupied, this is smart and doesn't let you move onto it.
+			let range = Pieces.getPieceMovementRangeByID(pieceID);
+			
+			let closestDistanceTo;
+			let closestDestination;
+			
+			for(let position in reversePath)
+			{
+				let distanceFrom = path[position];
+				let distanceTo = reversePath[position];
+				
+				// first check if this is valid. if we're out of range, do nothing.
+				if(distanceFrom > range) continue;
+				// if undefined, obviously that's also not a valid path 
+				if(distanceFrom === undefined) continue;
+				
+				if(closestDistanceTo === undefined || distanceTo < closestDistanceTo)
+				{
+					closestDistanceTo = distanceTo;
+					closestDestination = position;
+				}
+			}
+			return closestDestination;
+		},
+		
+		/*
+		// TODO: because sometimes you just need to ignore your team mates blocking you.
+		getClosestTaxicabPathPosition: function(pieceID, destinationPosition)
+		{
+			
+		}
+		*/
+		
 		// helper function to mark all the red tiles for valid attacks.
 		// range is for ranged abilities only, not movement.
 		getValidTargets: function(attackerID, range = 1, type = "attack")
@@ -735,7 +833,80 @@ const Pieces = (function()
 				Soldiers.onSoldierEndTurn(soldierID);
 			}
 		},
+		
 		/*
+			Piece thinks according to the "personality" of its leader,
+			mostly based on aggressiveness.
+			
+			- Timid 
+				- George B. McClellan, retreats easily, does not advance unless (3:1)
+			- Cautious
+				- Waits for a good situation and advances with the group
+			- Steady
+				- Advances and retreats with the group
+			- Aggressive
+				- Looks for an opening and makes its move, rarely retreats
+			- Reckless
+				- Always charges ahead and attacks, never retreats unless there is overwhelming odds (1:3)
+				
+			You'll want cautious infantry commanders but aggressive cavalry commanders.
+
+			- Note that strength is based on heuristics. It's soldiers, amount, and mail. 
+				Shiny soldiers are assumed to be stronger from afar.
+				Reputation, traits, and effects, may further modify it.
+		 */
+		pieceThink: function(pieceID)
+		{
+			// pieceGetSurroundingOdds (Ratio of Friendly/Enemy strength)
+			
+			// Simple as heck right now. Get a target and lock on.
+			let targetID = Game.getIDObjectProperty("pieces",pieceID,"target");
+			// if targetID is dead then reset 
+			if(Pieces.isPieceDeadByID(targetID))
+			{
+				targetID = null;
+				Game.setIDObjectProperty("pieces",pieceID,"target",targetID);
+			}
+			
+			
+			let pieceTeam = Pieces.getPieceTeamByID(pieceID);
+			if(!targetID)
+			{
+				targetID = Pieces.getPieceClosestEnemyPieceID(pieceID, pieceTeam);
+				Game.setIDObjectProperty("pieces",pieceID,"target",targetID);
+			}
+			
+			// if STILL no target, then do nothing.
+			if(!targetID) return;
+			
+			// if we can attack anything, then attack, and set *that* as our new target 
+			// TODO: add ranged 
+			let validAttackTargetsID = Pieces.getValidTargetsID(pieceID);
+			if(validAttackTargetsID.length > 0)
+			{
+				// attack 
+				targetID = validAttackTargetsID[0];
+				Game.setIDObjectProperty("pieces",pieceID,"target",targetID);
+				Abilities.abilityMeleeAttackPiece(pieceID, targetID);
+				return; 
+			}
+			
+			// Move towards target.
+			// TODO, this pathfinding is too clever by half.
+			
+			let piecePosition = Pieces.getPiecePositionByID(pieceID);
+			let targetPosition = Pieces.getPiecePositionByID(targetID);
+			
+			let destinationPosition = Pieces.getClosestPartialPathPosition(pieceID, targetPosition);
+			if(destinationPosition !== piecePosition && destinationPosition !== undefined) // don't move if you're already there, self explanatory
+			{
+				Abilities.abilityMovePiece(pieceID, destinationPosition); 
+				return;
+			}
+			
+		},
+		
+		
 		// TODO: perhaps we shall factor AI as its own thing someday.
 		AITurn: function(team)
 		{
@@ -747,44 +918,17 @@ const Pieces = (function()
 			for(var pieceIndex = 0; pieceIndex < teamPiecesID.length; pieceIndex++)
 			{
 				let pieceID = teamPiecesID[pieceIndex];
-				
-				let movementMap = Pieces.getValidMovementMap(pieceID);
-				// sort by leftmost
-				let leftmostTile = null;
-				let leftmostIndex;
-				for(var tileIndex in movementMap)
-				{
-					let cartesian = Board.calculateCartesianFromIndex(tileIndex);
-					if(!leftmostTile || leftmostTile?.x > cartesian.x)
-					{
-						// TEMP: condition for testing
-						if(cartesian.x > 0)
-						{
-							leftmostTile = cartesian;
-							leftmostIndex = tileIndex;
-						}
-					}
-				}
-				// in case there is no valid destination, do nothing.
-				if(leftmostIndex)
-				{
-					Abilities.abilityMovePiece(pieceID, leftmostIndex);
-				}
-				// if we still have AP left
-				let AP = Pieces.getPieceAPByID(pieceID);
-				if(AP > 0)
-				{
-					// see if we can attack anything
-					let attackTargetsID = Pieces.getValidTargetsID(pieceID, 1);
-					let targetID = attackTargetsID[0];
-					if(targetID)
-					{
-						Abilities.abilityMeleeAttackPiece(pieceID, targetID);
-					}
-				}
+				Pieces.pieceThink(pieceID);
 			}
 		},
-		 */
+		
+		autoTurn: function()
+		{
+			Pieces.AITurn(1);
+			Pieces.AITurn(2);
+			Pieces.endTurn();
+		},
+		
 		// stress test
 		/*
 		TestOneHundredTurns: function()
