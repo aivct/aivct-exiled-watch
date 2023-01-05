@@ -8,6 +8,9 @@ Currently in the middle of an endless overhaul involving ripping out the guts of
 
 # Development Notes
 
+## TODO:
+Unit Template Designer
+
 ## 0.1.10
 
 ![mockup](https://github.com/aivct/aivct-exiled-watch/blob/main/assets/mockup.png)
