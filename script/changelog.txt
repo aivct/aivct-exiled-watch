@@ -1,0 +1,125 @@
+0.3.2
+-readded AI turns with skeleton dumb AI
+0.3.1
+-continued general UI redesign
+	-except for some minor issues with the original design, changing UI was a breeze!
+	-decoupling rendering and adding APIs between logic and rendering was the best decision I ever made.
+0.3.0
+-proof of concept for click panes in GUI. Begin graphics overhaul.
+-fixed soldiers attack after running out of enemies bug
+0.2.14
+-Note, this BREAKS loading the game from the file system due to CORS and images.
+	-we are now allowing images to be manipulated on Canvas. Due to a security error, it is necessary to host from a server.
+-added recolor function for sprites
+0.2.13
+-optimized pathfinding somewhat using heuristic A* instead of... a giant sledgehammer.
+0.2.12
+-added fatigue
+	-exhausted soldiers fight worse.
+	-all soldiers recover some fatigue on end turn.
+0.2.11
+-added more unit stats 
+	-weapon skills and attributes!
+	-change getAttack to reflect that instead of returning the placeholder
+		-getDefense gets the same treatment
+		-and refolded accuracy back into getAttack
+	-added skills XP
+-moved particle generation to be at the ability level for consolidation
+0.2.10
+-added tooltips
+	-added tooltips for abilities
+0.2.9
+-added the bare bones to a prototype unit designer
+0.2.8
+-added localization and strings, for future best practices
+	-if string is not found, return the key instead. this way it's REALLY obvious when localization is not done.
+0.2.7
+-added scenarios!
+	-temporarily added a test scenario for a set piece battle
+-readded particles 
+	-fixed floating point error in merging particles
+0.2.6
+-added mounts and rebalanced movement.
+	-infantry now moves much less.
+	-any soldier with a mount is now mounted.
+-fixed a weird bug where you could attack ranged in melee, even if you were not ranged!
+0.2.5
+-added names
+	-added name generator with initial seed of human western names
+-added gender:
+	-M for Male
+	-F for Female
+	-N for Enby
+	-null for not-applicable (ie an animated table)
+0.2.4
+-added archers and ranged attacks
+0.2.3
+-added Equipment and revamped how combat works.
+	-weapon damage is now derived from the equiped weapon.
+	-armor now includes five body parts: head, chest, groin, legs, arms.
+		-HP however is still one big bar, but different body parts does different damage
+0.2.2
+-cleaned up the code somewhat
+-added undeployAll function to Pieces
+0.2.1
+-split AP into movement and AP
+0.2.0
+-completely overhauled how pieces work.
+	-now, they are more akin to a formation.
+	-added soldiers too, to stand in a formation.
+	-temporarily disabled several features in preparation for overhaul. We have basic functionality after this major change.
+-reordered canvas layering
+-added foolproofing to Metrics.addMetric
+0.1.10
+-added end turn button.
+0.1.9
+-unified abilities and refactored them out of pieces
+-added a few new metrics, as well as individual metrics for pieces.
+-finished that weird gandalf quote thingy in the comments. now I can rest.
+0.1.8
+-added metrics and started registering game stats
+0.1.7
+-added DOM UI
+-added ability to 'buy' units (though money isn't a thing yet)
+0.1.6
+-added setting for particlesEnabled
+-updated font to be less bad at lowercase. 
+-added keydown and keyup
+	-added ability to pan/scroll the main board via keys
+-factored out GUI.js to its own file
+0.1.5
+-unremoved UILayer, moved highlighting from effects to UI.
+-added particles for damage!
+0.1.4
+-changed number of levels from 5 to 10.
+-fixed a melee range bug. AGAIN.
+-removed UILayer canvas to be replaced with DOM synthesis.
+0.1.3
+-redid combat in the style of total war unit cards
+	-now includes weapon damage and armor 
+	-attack and defense now affect hit chance instead
+	-factored formationCount out of drawSettings
+	-attack now involves formationCount. more living units = more attacks
+		-obviously, now units also have proportionally more HP to compensate
+-formally added a stress test, mostly out of curiosity
+-added a new unit: pikemen, an upgraded spearman
+0.1.2
+-fixed a (0,0) bug causing units to disappear.
+-added a custom font!
+0.1.1
+-added new units:
+	-swordsman! more attack, less defense.
+	-horseman, has a lot of AP, but very low defense. get in, get out!
+-slightly refactored how drawing specifications are done for new units 
+-terribly stupid AI!
+-added HP and AP bars
+0.1.0 
+-you can FINALLY move, click and attack, 
+0.0.5 changelog:
+-redid pathfinding to just use djikstra
+0.0.4 changelog:
+-added ability to attack and defend
+-added XP indicators for units 
+-added spriteSheet type for image assets definitions
+0.0.3 changelog:
+-changed mouse to pointer events for compatibility
